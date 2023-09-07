@@ -13,27 +13,36 @@ unsigned int createShaderProgram(const char* vertexShaderSource, const char* fra
 const char* vertexShaderSource = R"(
 	#version 450
 	layout(location = 0) in vec3 vPos;
-void main() {
-	gl_Position = vec4(vPos, 1.0);
-}
+	layout(location = 1) in vec4 vColor;
+	out vec4 Color;
+	uniform float _Time;
+	void main() 
+	{
+		Color = vColor;
+		vec3 offset = vec3(0, sin(vPos.x + _Time), 0) * 0.5;
+		gl_Position = vec4(vPos + offset, 1.0);
+	}
 )";
 
 const char* fragmentShaderSource = R"(
-#version 450
-out vec4 FragColor;
-void main(){
-	FragColor = vec4(1.0);
-}
+	#version 450
+	out vec4 FragColor;
+	in vec4 Color;
+	uniform float _Time;
+	void main()
+	{
+		FragColor = Color * abs(sin(uTime));
+	}
 )";
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float verticies[9] = {
-	 //x   //y   //z
-	-0.5, -0.5,  0.0,  //Left
-	 0.5, -0.5,  0.0,  //Right
-	 0.0,  0.5,  0.0   //Center
+float verticies[21] = {
+	 //x   //y   //z   //r   //g   //b   //a
+	-0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  1.0,  //Left
+	 0.5, -0.5,  0.0,  0.0,  1.0,  0.0,  1.0,  //Right
+	 0.0,  0.5,  0.0,  0.0,  0.0,  1.0,  1.0   //Center
 };
 
 unsigned int vao, shaderProgram;
@@ -66,6 +75,12 @@ int main() {
 		glfwPollEvents();
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		glUseProgram(shaderProgram);
+		glBindVertexArray(vao);
+		float time = (float)glfwGetTime();
+		int timeLoaction = glGetUniformLocation(shaderProgram, "_Time");
+		glUniform1f(timeLoaction, time);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 		glfwSwapBuffers(window);
 	}
 	printf("Shutting down...");
@@ -85,8 +100,12 @@ unsigned int createVAO(float* vertexData, int numVertices)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	//Defining the vertex attributes and identifies it as index [0]. There are [numVerticies] components of type [float], the values [are not] normalized (because that only matters for integers).
 	//There's a stride of [numVerticies * size of float] bytes between each vertex, and this attribute is offset from the start of the vertex by [0].
-	glVertexAttribPointer(0, numVertices, GL_FLOAT, GL_FALSE, sizeof(float) * numVertices, (const void*)0);
+		//Position
+	glVertexAttribPointer(0, numVertices, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)0);
 	glEnableVertexAttribArray(0);
+		//Color
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)(sizeof(float)*numVertices));
+	glEnableVertexAttribArray(1);
 
 	return vaoRef;
 }
