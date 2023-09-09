@@ -31,7 +31,7 @@ const char* fragmentShaderSource = R"(
 	uniform float _Time;
 	void main()
 	{
-		FragColor = Color * abs(sin(uTime));
+		FragColor = Color * abs(sin(_Time));
 	}
 )";
 
@@ -112,8 +112,7 @@ unsigned int createVAO(float* vertexData, int numVertices)
 
 unsigned int createShader(GLenum shaderType, const char* sourceCode)
 {
-	unsigned int shaderRef = NULL;
-	glCreateShader(shaderType);
+	unsigned int shaderRef = glCreateShader(shaderType);
 	glShaderSource(shaderRef, 1, &sourceCode, NULL);
 	glCompileShader(shaderRef);
 	int success;
