@@ -8,7 +8,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-unsigned int createShader(GLenum shaderType, const char* sourceCode);
+#include <willowLib/shader.h>
+
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
 unsigned int createVAO(float* vertexData, int numVertices);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -112,28 +113,9 @@ int main() {
 	printf("Shutting down...");
 }
 
-
-unsigned int createShader(GLenum shaderType, const char* sourceCode) {
-	//Create a new vertex shader object
-	unsigned int shader = glCreateShader(shaderType);
-	//Supply the shader object with source code
-	glShaderSource(shader, 1, &sourceCode, NULL);
-	//Compile the shader object
-	glCompileShader(shader);
-	int success;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		//512 is an arbitrary length, but should be plenty of characters for our error message.
-		char infoLog[512];
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		printf("Failed to compile shader: %s", infoLog);
-	}
-	return shader;
-}
-
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource) {
-	unsigned int vertexShader = createShader(GL_VERTEX_SHADER, vertexShaderSource);
-	unsigned int fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+	unsigned int vertexShader = willowLib::createShader(GL_VERTEX_SHADER, vertexShaderSource);
+	unsigned int fragmentShader = willowLib::createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
 	unsigned int shaderProgram = glCreateProgram();
 	//Attach each stage

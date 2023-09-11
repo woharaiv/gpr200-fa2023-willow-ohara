@@ -101,10 +101,10 @@ unsigned int createVAO(float* vertexData, int numVertices)
 	//Defining the vertex attributes and identifies it as index [0]. There are [numVerticies] components of type [float], the values [are not] normalized (because that only matters for integers).
 	//There's a stride of [numVerticies * size of float] bytes between each vertex, and this attribute is offset from the start of the vertex by [0].
 		//Position
-	glVertexAttribPointer(0, numVertices, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)0);
 	glEnableVertexAttribArray(0);
 		//Color
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)(sizeof(float)*numVertices));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void*)(sizeof(float)*3));
 	glEnableVertexAttribArray(1);
 
 	return vaoRef;
