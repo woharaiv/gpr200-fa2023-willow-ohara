@@ -3,10 +3,11 @@
 #include <string>
 
 namespace willowLib {
-	std::string loadShaderSourceFromFile(const std::string& filePath);
-	unsigned int createShader(GLenum shaderType, const char* sourceCode);
-	unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
-	unsigned int createVAO(float* vertexData, int numVertices, unsigned int* indicesData, int numIndices);
+	
+	struct Vertex {
+		float x, y, z;
+		float u, v;
+	};
 
 	class Shader
 	{
@@ -21,4 +22,9 @@ namespace willowLib {
 	private:
 		unsigned int m_id; //OpenGL program handle
 	};
+
+	std::string loadShaderSourceFromFile(const std::string& filePath);
+	unsigned int createShader(GLenum shaderType, const char* sourceCode);
+	unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
+	unsigned int createVAO(Vertex* vertexData, int numVertices, unsigned int* indicesData, int numIndices);
 }

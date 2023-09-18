@@ -59,7 +59,7 @@ namespace willowLib {
 		return shaderProgram;
 	}
 
-	unsigned int createVAO(float* vertexData, int numVertices, unsigned int* indicesData, int numIndices)
+	unsigned int createVAO(Vertex* vertexData, int numVertices, unsigned int* indicesData, int numIndices)
 	{
 		unsigned int vao;
 		glGenVertexArrays(1, &vao);
@@ -70,11 +70,15 @@ namespace willowLib {
 		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		//Allocate space for + send vertex data to GPU.
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, vertexData, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * numVertices, vertexData, GL_STATIC_DRAW);
 
 		//Position attribute
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (const void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
 		glEnableVertexAttribArray(0);
+
+		//UV attribute
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, u));
+		glEnableVertexAttribArray(1);
 
 		unsigned int ebo;
 		glGenBuffers(1, &ebo);

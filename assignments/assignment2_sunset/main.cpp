@@ -15,12 +15,12 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float vertices[12] = {
-	 //x   //y  //z   
-	-0.8, -0.7, 0.0,  //Bottom Left
-	 0.8, -0.7, 0.0,  //Bottom Right
-	 0.8,  0.7, 0.0,  //Top Right
-	 -0.8, 0.7, 0.0   //Top Left
+willowLib::Vertex vertices[4] = {
+	 //x     y     z     u     v
+	{-0.8, -0.7,  0.0,  0.0,  0.0}, //Bottom Left
+	{ 0.8, -0.7,  0.0,  1.0,  0.0}, //Bottom Right
+	{ 0.8,  0.7,  0.0,  1.0,  1.0}, //Top Right
+	{-0.8,  0.7,  0.0,  0.0,  1.0}   //Top Left
 };
 
 unsigned int indicies[6] = {
@@ -32,6 +32,7 @@ float triangleColor[3] = { 1.0f, 0.5f, 0.0f };
 float triangleBrightness = 1.0f;
 bool showImGUIDemoWindow = false;
 bool drawWireframe = false;
+float resolution[2] = { SCREEN_WIDTH, SCREEN_HEIGHT};
 
 int main() {
 	printf("Initializing...");
@@ -74,6 +75,8 @@ int main() {
 		//Set uniforms
 		shader.setVec3("_Color", triangleColor[0], triangleColor[1], triangleColor[2]);
 		shader.setFloat("_Brightness", triangleBrightness);
+		shader.setVec2("_Resolution", resolution[0], resolution[1]);
+		shader.setFloat("_Time", glfwGetTime());
 		if (drawWireframe)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
@@ -92,6 +95,12 @@ int main() {
 			ImGui::Checkbox("Wireframe View", &drawWireframe);
 			ImGui::ColorEdit3("Color", triangleColor);
 			ImGui::SliderFloat("Brightness", &triangleBrightness, 0.0f, 1.0f);
+			if (ImGui::BeginMenu("Specs"))
+			{
+				ImGui::Text("Resolution: (%f) x (%f)", resolution[0], resolution[1]);
+				ImGui::Text("Time: (%f)", glfwGetTime());
+			}
+
 			ImGui::End();
 			if (showImGUIDemoWindow) {
 				ImGui::ShowDemoWindow(&showImGUIDemoWindow);
@@ -109,5 +118,7 @@ int main() {
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	resolution[0] = width;
+	resolution[1] = height;
 }
 
