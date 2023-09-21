@@ -108,6 +108,11 @@ namespace willowLib {
 	{
 		glUniform1f(glGetUniformLocation(m_id, name.c_str()), v);
 	}
+	void Shader::setFloatArray(const std::string& name, float* v, int size) const
+	{
+		//Setting uniform array function from https://stackoverflow.com/a/8100249
+		glUniform1fv(glGetUniformLocation(m_id, name.c_str()), size, v);
+	}
 	void Shader::setVec2(const std::string& name, float x, float y) const
 	{
 		glUniform2f(glGetUniformLocation(m_id, name.c_str()), x, y);

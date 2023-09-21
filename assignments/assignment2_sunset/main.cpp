@@ -17,10 +17,10 @@ const int SCREEN_HEIGHT = 720;
 
 willowLib::Vertex vertices[4] = {
 	 //x     y     z     u     v
-	{-0.8, -0.7,  0.0,  0.0,  0.0}, //Bottom Left
-	{ 0.8, -0.7,  0.0,  1.0,  0.0}, //Bottom Right
-	{ 0.8,  0.7,  0.0,  1.0,  1.0}, //Top Right
-	{-0.8,  0.7,  0.0,  0.0,  1.0}   //Top Left
+	{-1.0, -1.0,  0.0,  0.0,  0.0}, //Bottom Left
+	{ 1.0, -1.0,  0.0,  1.0,  0.0}, //Bottom Right
+	{ 1.0,  1.0,  0.0,  1.0,  1.0}, //Top Right
+	{-1.0,  1.0,  0.0,  0.0,  1.0}   //Top Left
 };
 
 unsigned int indicies[6] = {
@@ -28,8 +28,16 @@ unsigned int indicies[6] = {
 	2, 3, 0
 };
 
-float triangleColor[3] = { 1.0f, 0.5f, 0.0f };
-float triangleBrightness = 1.0f;
+float horizonTopColorDay[3] = { 1.0f, 0.5f, 0.0f };
+float horizonBotColorDay[3] = { 0.5f, 0.5f, 1.0f };
+float horizonTopColorNight[3] = { 0.25f, 0.125f, 0.0f };
+float horizonBotColorNight[3] = { 0.125f, 0.125f, 0.25f };
+
+float sunSpeed = 1.0f;
+
+float buildingColorDay[3] = { 0.2, 0.2, 0.2 };
+float buildingColorNight[3] = { 0.1, 0.1, 0.1 };
+float buildings[10] = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 bool showImGUIDemoWindow = false;
 bool drawWireframe = false;
 float resolution[2] = { SCREEN_WIDTH, SCREEN_HEIGHT};
@@ -66,6 +74,11 @@ int main() {
 	unsigned int vao = willowLib::createVAO(vertices, 4, indicies, 6);
 	glBindVertexArray(vao);
 
+	srand(time(NULL));
+	for (int i = 0; i < sizeof(buildings)/sizeof(float); i++)
+	{
+		buildings[i] = ew::RandomRange(0, 1);
+	}
 	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -73,8 +86,14 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Set uniforms
-		shader.setVec3("_Color", triangleColor[0], triangleColor[1], triangleColor[2]);
-		shader.setFloat("_Brightness", triangleBrightness);
+		shader.setVec3("_ColorTopRise", horizonTopColorDay[0], horizonTopColorDay[1], horizonTopColorDay[2]);
+		shader.setVec3("_ColorBotRise", horizonBotColorDay[0], horizonBotColorDay[1], horizonBotColorDay[2]);
+		shader.setVec3("_ColorTopSet", horizonTopColorNight[0], horizonTopColorNight[1], horizonTopColorNight[2]);
+		shader.setVec3("_ColorBotSet", horizonBotColorNight[0], horizonBotColorNight[1], horizonBotColorNight[2]);
+		shader.setVec3("_BuildingColorRise", buildingColorDay[0], buildingColorDay[1], buildingColorDay[2]);
+		shader.setVec3("_BuildingColorSet", buildingColorNight[0], buildingColorNight[1], buildingColorNight[2]);
+		shader.setFloatArray("_BuildingHeight", buildings, 10);
+		shader.setFloat("_Speed", sunSpeed);
 		shader.setVec2("_Resolution", resolution[0], resolution[1]);
 		shader.setFloat("_Time", glfwGetTime());
 		if (drawWireframe)
@@ -92,12 +111,33 @@ int main() {
 
 			ImGui::Begin("Settings");
 			ImGui::Checkbox("Show Demo Window", &showImGUIDemoWindow);
-			ImGui::Checkbox("Wireframe View", &drawWireframe);
-			ImGui::ColorEdit3("Color", triangleColor);
-			ImGui::SliderFloat("Brightness", &triangleBrightness, 0.0f, 1.0f);
-			if (ImGui::BeginMenu("Specs"))
+			if (ImGui::CollapsingHeader("Sky Settings"))
 			{
-				ImGui::Text("Resolution: (%f) x (%f)", resolution[0], resolution[1]);
+				ImGui::ColorEdit3("Upper Color (Day)", horizonTopColorDay);
+				ImGui::ColorEdit3("Lower Color (Day)", horizonBotColorDay);
+				ImGui::ColorEdit3("Upper Color (Night)", horizonTopColorNight);
+				ImGui::ColorEdit3("Lower Color (Night)", horizonBotColorNight);
+				ImGui::SliderFloat("Speed", &sunSpeed, 0.0f, 25.0f);
+			}
+			if (ImGui::CollapsingHeader("Building Settings"))
+			{
+				ImGui::ColorEdit3("Building Color (Day)", buildingColorDay);
+				ImGui::ColorEdit3("Building Color (Night)", buildingColorNight);
+				ImGui::PushID("Building Heights");
+				for (int i = 0; i < sizeof(buildings) / sizeof(float); i++)
+				{
+					if (i > 0) ImGui::SameLine();
+					ImGui::PushID(i);
+					ImGui::VSliderFloat("##v", ImVec2(18, 160), &buildings[i], 0.0f, 1.0f, "");
+					if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+						ImGui::SetTooltip("%.3f", buildings[i]);
+					ImGui::PopID();
+				}
+				ImGui::PopID();
+			}
+			if (ImGui::CollapsingHeader("Specs"))
+			{
+				ImGui::Text("Resolution: (%i) x (%i)", (int)resolution[0], (int)resolution[1]);
 				ImGui::Text("Time: (%f)", glfwGetTime());
 			}
 
