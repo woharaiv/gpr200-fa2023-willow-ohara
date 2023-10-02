@@ -9,6 +9,8 @@
 #include <imgui_impl_opengl3.h>
 
 #include <ew/shader.h>
+#include <willowLib/shader.h>
+#include <willowLib/texture.h>
 
 struct Vertex {
 	float x, y, z;
@@ -31,6 +33,8 @@ unsigned short indices[6] = {
 	0, 1, 2,
 	2, 3, 0
 };
+
+float guyOffset[2] = { 0.0, 0.0 };
 
 int main() {
 	printf("Initializing...");
@@ -58,34 +62,61 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-	ew::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
+	willowLib::Shader wallShader("assets/background.vert", "assets/background.frag");
+	willowLib::Shader guyShader("assets/character.vert", "assets/character.frag");
+
+	unsigned int bgTexture = willowLib::loadTexture("assets/confetti.png", GL_REPEAT, GL_NEAREST);
+	unsigned int guyTexture = willowLib::loadTexture("assets/guy.png", GL_CLAMP_TO_BORDER, GL_NEAREST);
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
 
 	glBindVertexArray(quadVAO);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Set uniforms
-		shader.use();
+		
+		//====Background====
+		wallShader.use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, bgTexture);
+		
+		wallShader.setInt("_Texture", 0);
+		
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
+		
+		//====Character====
+		guyShader.use();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, guyTexture);
+
+		guyShader.setInt("_Texture", 0);
+		guyShader.setFloat("_Scale", 0.5);
+		guyShader.setVec2("_PosOffset", guyOffset[0], guyOffset[1]);
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
-		//Render UI
+		//====ImGUI====
 		{
 			ImGui_ImplGlfw_NewFrame();
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui::NewFrame();
 
 			ImGui::Begin("Settings");
+			ImGui::SliderFloat2("Character Offset", guyOffset, -2, 2);
 			ImGui::End();
 
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		}
+
 
 		glfwSwapBuffers(window);
 	}
