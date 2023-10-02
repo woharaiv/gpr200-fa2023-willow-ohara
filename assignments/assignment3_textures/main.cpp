@@ -36,6 +36,8 @@ unsigned short indices[6] = {
 
 float guyOffset[2] = { 0.0, 0.0 };
 
+float guyScale = 0.5;
+
 int main() {
 	printf("Initializing...");
 	if (!glfwInit()) {
@@ -67,6 +69,7 @@ int main() {
 
 	unsigned int bgTexture = willowLib::loadTexture("assets/confetti.png", GL_REPEAT, GL_NEAREST);
 	unsigned int guyTexture = willowLib::loadTexture("assets/guy.png", GL_CLAMP_TO_BORDER, GL_NEAREST);
+	unsigned int colorNoise = willowLib::loadTexture("assets/colorNoise.png", GL_MIRRORED_REPEAT, GL_LINEAR);
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
 
@@ -86,8 +89,12 @@ int main() {
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, bgTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, colorNoise);
 		
 		wallShader.setInt("_Texture", 0);
+		wallShader.setInt("_ColorNoise", 1);
+		wallShader.setFloat("_Time", (float)glfwGetTime());
 		
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 		
@@ -98,7 +105,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, guyTexture);
 
 		guyShader.setInt("_Texture", 0);
-		guyShader.setFloat("_Scale", 0.5);
+		guyShader.setFloat("_Scale", guyScale);
 		guyShader.setVec2("_PosOffset", guyOffset[0], guyOffset[1]);
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
@@ -111,6 +118,7 @@ int main() {
 
 			ImGui::Begin("Settings");
 			ImGui::SliderFloat2("Character Offset", guyOffset, -2, 2);
+			ImGui::SliderFloat("Character Scale", &guyScale, 0, 3);
 			ImGui::End();
 
 			ImGui::Render();
