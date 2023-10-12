@@ -3,6 +3,54 @@
 #include "../ew/ewMath/vec3.h"
 
 namespace willowLib {
+	//Creates a right handed view space
+	//eye = eye (camera) position
+	//target = position to look at
+	//up = up axis, usually(0,1,0)
+	inline ew::Mat4 LookAt(ew::Vec3 eye, ew::Vec3 target, ew::Vec3 up)
+	{
+		ew::Vec3 f = (eye - target) / ew::Magnitude(eye - target);
+		ew::Vec3 r = ew::Cross(up, f) / ew::Magnitude(ew::Cross(up, f));
+		ew::Vec3 u = ew::Cross(f, r) / ew::Magnitude(ew::Cross(f, r));
+		return ew::Mat4(
+			r.x, r.y, r.z, -ew::Dot(r, eye),
+			u.x, u.y, u.z, -ew::Dot(u, eye),
+			f.x, f.y, f.z, -ew::Dot(f, eye),
+			 0,   0,   0,         1
+		);
+	};
+	//Orthographic projection
+	inline ew::Mat4 Orthographic(float height, float aspect, float near, float far) 
+	{
+		float width = height * aspect;
+		//Right bound
+		float r = width / 2;
+		//Left bound
+		float l = -r;
+		//Top bound
+		float t = height / 2;
+		//Bottom bound
+		float b = -t;
+
+		return ew::Mat4(
+			2/(r-l),   0,         0,            -(r+l)/(r-l),
+			   0,   2/(t-b),      0,            -(t+b)/(t-b),
+			   0,      0,   -2/(far-near), -(far+near)/(far-near),
+			   0,      0,         0,                  1
+		);
+	};
+	//Perspective projection
+	//fov = vertical aspect ratio (radians)
+	inline ew::Mat4 Perspective(float fov, float aspect, float near, float far) 
+	{
+		return ew::Mat4(
+			1/tan(fov/2)*aspect,       0,                0,                      0,
+			         0,          1/tan(fov/2),           0,                      0,
+			         0,                0,      (near+far)/(near-far), (2*far*near)/(near-far),
+			         0,                0,               -1,                      0
+		);
+	};
+
 	//Identity matrix
 	inline ew::Mat4 Identity() {
 		return ew::Mat4(
