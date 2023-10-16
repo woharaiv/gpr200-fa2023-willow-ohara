@@ -11,15 +11,22 @@
 #include <ew/shader.h>
 #include <ew/procGen.h>
 #include <ew/transform.h>
+#include <willowLib/camera.h>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void moveCamera(GLFWwindow* window, willowLib::Camera* camera, willowLib::CameraControls* controls);
 
 //Projection will account for aspect ratio!
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
+int resolution[2] = { SCREEN_WIDTH, SCREEN_HEIGHT };
+
 const int NUM_CUBES = 4;
 ew::Transform cubeTransforms[NUM_CUBES];
+
+willowLib::Camera cam;
+willowLib::CameraControls cameraControls;
 
 int main() {
 	printf("Initializing...");
@@ -65,16 +72,21 @@ int main() {
 		cubeTransforms[i].position.x = i % (NUM_CUBES / 2) - 0.5;
 		cubeTransforms[i].position.y = i / (NUM_CUBES / 2) - 0.5;
 	}
+	cam.position = {0, 0, 5};
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+		moveCamera(window, &cam, &cameraControls);
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		//Clear both color buffer AND depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		cam.aspectRatio = (float)resolution[0] / resolution[1];
+
 		//Set uniforms
 		shader.use();
-
+		shader.setMat4("_View", cam.ViewMatrix());
+		shader.setMat4("_Projection", cam.ProjectionMatrix());
 		//TODO: Set model matrix uniform
 		for (size_t i = 0; i < NUM_CUBES; i++)
 		{
@@ -101,7 +113,16 @@ int main() {
 				}
 				ImGui::PopID();
 			}
-			ImGui::Text("Camera");
+			if (ImGui::CollapsingHeader("Camera"))
+			{
+				ImGui::DragFloat3("Camera Position", &cam.position.x, 0.01f);
+				ImGui::DragFloat3("Camera Target", &cam.target.x, 0.01f);
+				ImGui::Checkbox("Orthographic?", &cam.orthogrpahic);
+				if (cam.orthogrpahic)
+					ImGui::DragFloat("Orhtographic Frustum Height", &cam.orthoSize);
+				else
+					ImGui::DragFloat("FOV", &cam.fov, 0.1f);
+			}
 			ImGui::End();
 			
 			ImGui::Render();
@@ -113,8 +134,42 @@ int main() {
 	printf("Shutting down...");
 }
 
+void moveCamera(GLFWwindow* window, willowLib::Camera* camera, willowLib::CameraControls* controls)
+{
+	//Camera only moves on right click; release mouse and return early if not right clicking.
+	if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT))
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		controls->firstMouse = true;
+		return;
+	}
+	//Hide cursor, but it keeps moving
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	//Get this frame's mouse position
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+
+	if (controls->firstMouse)
+	{
+		controls->firstMouse = false;
+		controls->prevMouseX = mouseX;
+		controls->prevMouseY = mouseY;
+	}
+
+	//Get position delta
+	//Add to yaw and pitch
+	//Clamp pitch between -89 and 89
+
+	//Remember previous mouse position
+	controls->prevMouseX = mouseX;
+	controls->prevMouseY = mouseY;
+}
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	resolution[0] = width;
+	resolution[1] = height;
 }
 

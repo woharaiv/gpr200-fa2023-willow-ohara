@@ -1,13 +1,14 @@
 #pragma once
 #include "../ew/ewMath/mat4.h"
 #include "../ew/ewMath/vec3.h"
+#include "../ew/ewMath/ewMath.h"
 
 namespace willowLib {
 	//Creates a right handed view space
 	//eye = eye (camera) position
 	//target = position to look at
 	//up = up axis, usually(0,1,0)
-	inline ew::Mat4 LookAt(ew::Vec3 eye, ew::Vec3 target, ew::Vec3 up)
+	inline ew::Mat4 LookAt(ew::Vec3 eye, ew::Vec3 target, ew::Vec3 up = {0, 1, 0})
 	{
 		ew::Vec3 f = (eye - target) / ew::Magnitude(eye - target);
 		ew::Vec3 r = ew::Cross(up, f) / ew::Magnitude(ew::Cross(up, f));
@@ -44,7 +45,7 @@ namespace willowLib {
 	inline ew::Mat4 Perspective(float fov, float aspect, float near, float far) 
 	{
 		return ew::Mat4(
-			1/tan(fov/2)*aspect,       0,                0,                      0,
+			1/(tan(fov/2)*aspect),       0,                0,                      0,
 			         0,          1/tan(fov/2),           0,                      0,
 			         0,                0,      (near+far)/(near-far), (2*far*near)/(near-far),
 			         0,                0,               -1,                      0
