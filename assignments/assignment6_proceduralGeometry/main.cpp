@@ -26,11 +26,11 @@ float prevTime;
 
 struct AppSettings {
 	const char* shadingModeNames[6] = { "Solid Color","Normals","UVs","Texture","Lit","Texture Lit"};
-	int shadingModeIndex;
+	int shadingModeIndex = 5;
 
 	ew::Vec3 bgColor = ew::Vec3(0.1f);
 	ew::Vec3 shapeColor = ew::Vec3(1.0f);
-	bool wireframe = true;
+	bool wireframe = false;
 	bool drawAsPoints = false;
 	bool backFaceCulling = true;
 

@@ -81,9 +81,9 @@ namespace willowLib {
 		centerIndex = mesh.vertices.size() - 1;
 		for (int i = 0; i <= numSegments; i++)
 		{
-			mesh.indices.push_back(bottomIndiciesStart + i);
-			mesh.indices.push_back(centerIndex);
 			mesh.indices.push_back(bottomIndiciesStart + i + 1);
+			mesh.indices.push_back(centerIndex);
+			mesh.indices.push_back(bottomIndiciesStart + i);
 		}
 
 		//Connect side indices
