@@ -32,7 +32,7 @@ struct AppSettings {
 	ew::Vec3 shapeColor = ew::Vec3(1.0f);
 	bool wireframe = false;
 	bool drawAsPoints = false;
-	bool backFaceCulling = true;
+	bool backFaceCulling = false;
 
 	//Euler angles (degrees)
 	ew::Vec3 lightRotation = ew::Vec3(0, 0, 0);
@@ -88,14 +88,22 @@ int main() {
 	ew::Mesh planeMesh(planeMeshData);
 
 	//Create Cylinder
-	ew::MeshData cylMeshData = willowLib::createCylinder(1.5, 1, 16);
+	ew::MeshData cylMeshData = willowLib::createCylinder(1, 0.5, 16);
 	ew::Mesh cylMesh(cylMeshData);
 
+	//Create Sphere
+	ew::MeshData sphereMeshData = willowLib::createSphere(1, 10);
+	ew::Mesh sphereMesh(sphereMeshData);
+	
 	//Initialize transforms
 	ew::Transform cubeTransform;
+	cubeTransform.position = ew::Vec3(-2, 0, 0);
 	ew::Transform planeTransform;
+	planeTransform.position = ew::Vec3(2, 0, 0);
 	ew::Transform cylTransform;
-
+	cylTransform.position = ew::Vec3(4, 0, 0);
+	ew::Transform sphereTransform;
+	sphereTransform.position = ew::Vec3(0, 1, 0);
 	resetCamera(camera,cameraController);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -129,16 +137,20 @@ int main() {
 		shader.setVec3("_LightDir", lightF);
 
 		//Draw cube
-		//shader.setMat4("_Model", cubeTransform.getModelMatrix());
-		//cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", cubeTransform.getModelMatrix());
+		cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw plane
-		//shader.setMat4("_Model", planeTransform.getModelMatrix());
-		//planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", planeTransform.getModelMatrix());
+		planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw cylinder
 		shader.setMat4("_Model", cylTransform.getModelMatrix());
 		cylMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw sphere
+		shader.setMat4("_Model", sphereTransform.getModelMatrix());
+		sphereMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Render UI
 		{
