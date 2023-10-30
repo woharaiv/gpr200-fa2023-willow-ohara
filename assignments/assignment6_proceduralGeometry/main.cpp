@@ -87,9 +87,14 @@ int main() {
 	ew::MeshData planeMeshData = willowLib::createPlane(1.5, 10);
 	ew::Mesh planeMesh(planeMeshData);
 
+	//Create Cylinder
+	ew::MeshData cylMeshData = willowLib::createCylinder(1.5, 1, 16);
+	ew::Mesh cylMesh(cylMeshData);
+
 	//Initialize transforms
 	ew::Transform cubeTransform;
 	ew::Transform planeTransform;
+	ew::Transform cylTransform;
 
 	resetCamera(camera,cameraController);
 
@@ -124,12 +129,16 @@ int main() {
 		shader.setVec3("_LightDir", lightF);
 
 		//Draw cube
-		shader.setMat4("_Model", cubeTransform.getModelMatrix());
-		cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		//shader.setMat4("_Model", cubeTransform.getModelMatrix());
+		//cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw plane
-		shader.setMat4("_Model", planeTransform.getModelMatrix());
-		planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		//shader.setMat4("_Model", planeTransform.getModelMatrix());
+		//planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw cylinder
+		shader.setMat4("_Model", cylTransform.getModelMatrix());
+		cylMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Render UI
 		{
