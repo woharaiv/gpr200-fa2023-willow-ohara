@@ -15,9 +15,9 @@ namespace willowLib {
 	{
 		ew::MeshData mesh;
 		int columns = subdivisions + 1;
-		for (int row = 0; row <= columns; row++)
+		for (int row = 0; row <= subdivisions; row++)
 		{
-			for (int col = 0; col <= columns; col++)
+			for (int col = 0; col <= subdivisions; col++)
 			{
 				ew::Vertex v;
 				v.pos.x = col * (size / columns);
@@ -33,14 +33,15 @@ namespace willowLib {
 			for (int col = 0; col < subdivisions; col++)
 			{
 				int start = row * columns + col;
-				//Bottom Right
-				mesh.indices.push_back(start);
-				mesh.indices.push_back(start + 1);
-				mesh.indices.push_back(start + columns + 1);
 				//Top Left
 				mesh.indices.push_back(start);
 				mesh.indices.push_back(start + columns + 1);
 				mesh.indices.push_back(start + columns);
+				//Bottom Right
+				mesh.indices.push_back(start);
+				mesh.indices.push_back(start + 1);
+				mesh.indices.push_back(start + columns + 1);
+				
 			}
 		}
 		return mesh;
