@@ -198,8 +198,8 @@ namespace willowLib {
 		}
 		return mesh;
 	}
-	//Create a torus, centered on the torus's center
-	ew::MeshData createTorus(float thickness, float radius, int subdivisions)
+	//Create a torus, centered on the torus's center and laying flat along the XZ plane
+	ew::MeshData createTorus(float radius, float thickness, int subdivisions)
 	{
 		ew::MeshData mesh;
 		float thetaStep = ew::TAU / subdivisions;
@@ -210,12 +210,9 @@ namespace willowLib {
 			{
 				ew::Vertex v;
 				float subTheta = j * thetaStep;
-				v.pos.x = (cos(subTheta) * thickness) + cos(theta) * radius;
-				v.pos.y = posOffset.y;
-				v.pos.z = (sin(subTheta) * thickness) + cos(theta) * radius;
-				
-				v.pos.x = v.pos.x * cos(subTheta) - v.pos.y * sin(subTheta);
-				v.pos.y = v.pos.x * sin(subTheta) - v.pos.y * cos(subTheta);
+				v.pos.x = sin(theta) * (radius + sin(subTheta) * thickness);
+				v.pos.y = cos(subTheta) * thickness;
+				v.pos.z = cos(theta) * (radius + sin(subTheta) * thickness);
 				
 				v.normal = ew::Normalize(v.pos);
 				v.uv = { (float)i / subdivisions, (float)j / subdivisions };
@@ -223,16 +220,21 @@ namespace willowLib {
 			}
 		}
 		//point, 1 ahead, 1 ahead next row
-		for (int ring = 0; ring < subdivisions; ring++)
+		for (int ring = 0; ring <= subdivisions; ring++)
 		{
 			int start = ring * subdivisions;
 			for (int ringPlace = 0; ringPlace <= subdivisions; ringPlace++)
 			{
 				mesh.indices.push_back(start + ringPlace);
 				mesh.indices.push_back(start + ringPlace + 1);
-				mesh.indices.push_back(start + ringPlace + subdivisions);
+				mesh.indices.push_back(start + ringPlace + subdivisions + 1);
+
+				mesh.indices.push_back(start + ringPlace + 1);
+				mesh.indices.push_back(start + ringPlace + subdivisions + 2);
+				mesh.indices.push_back(start + ringPlace + subdivisions + 1);
 			}
 		}
+		mesh.indices.pop_back();
 		return mesh;
 	}
 }

@@ -80,30 +80,22 @@ int main() {
 	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
 
 	//Create cube
-	ew::MeshData cubeMeshData = ew::createCube(0.5f);
-	ew::Mesh cubeMesh(cubeMeshData);
-
+	willowLib::Cube testCube;
 	//Create plane
-	ew::MeshData planeMeshData = willowLib::createPlane(1.5, 10);
-	ew::Mesh planeMesh(planeMeshData);
-
+	willowLib::Plane testPlane;
 	//Create Cylinder
-	ew::MeshData cylMeshData = willowLib::createCylinder(1, 0.5, 16);
-	ew::Mesh cylMesh(cylMeshData);
-
+	willowLib::Cylinder testCyl;
 	//Create Sphere
-	ew::MeshData sphereMeshData = willowLib::createSphere(1, 10);
-	ew::Mesh sphereMesh(sphereMeshData);
-	
+	willowLib::Sphere testSphere;
+	//Create Torus
+	willowLib::Torus testTorus;
+
 	//Initialize transforms
-	ew::Transform cubeTransform;
-	cubeTransform.position = ew::Vec3(-2, 0, 0);
-	ew::Transform planeTransform;
-	planeTransform.position = ew::Vec3(2, 0, 0);
-	ew::Transform cylTransform;
-	cylTransform.position = ew::Vec3(4, 0, 0);
-	ew::Transform sphereTransform;
-	sphereTransform.position = ew::Vec3(0, 1, 0);
+	testCube.transform.position = ew::Vec3(-2, 0, 0);
+	testPlane.transform.position = ew::Vec3(2, 0, 0);
+	testCyl.transform.position = ew::Vec3(4, 0, 0);
+	testSphere.transform.position = ew::Vec3(-4, 1, 0);
+	testTorus.transform.position = ew::Vec3(0, 0, 0);
 	resetCamera(camera,cameraController);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -137,20 +129,24 @@ int main() {
 		shader.setVec3("_LightDir", lightF);
 
 		//Draw cube
-		shader.setMat4("_Model", cubeTransform.getModelMatrix());
-		cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", testCube.transform.getModelMatrix());
+		testCube.getMesh().draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw plane
-		shader.setMat4("_Model", planeTransform.getModelMatrix());
-		planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", testPlane.transform.getModelMatrix());
+		testPlane.getMesh().draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw cylinder
-		shader.setMat4("_Model", cylTransform.getModelMatrix());
-		cylMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", testCyl.transform.getModelMatrix());
+		testCyl.getMesh().draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Draw sphere
-		shader.setMat4("_Model", sphereTransform.getModelMatrix());
-		sphereMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+		shader.setMat4("_Model", testSphere.transform.getModelMatrix());
+		testSphere.getMesh().draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw torus
+		shader.setMat4("_Model", testTorus.transform.getModelMatrix());
+		testTorus.getMesh().draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Render UI
 		{
@@ -177,22 +173,65 @@ int main() {
 					resetCamera(camera, cameraController);
 				}
 			}
-
-			ImGui::ColorEdit3("BG color", &appSettings.bgColor.x);
-			ImGui::ColorEdit3("Shape color", &appSettings.shapeColor.x);
-			ImGui::Combo("Shading mode", &appSettings.shadingModeIndex, appSettings.shadingModeNames, IM_ARRAYSIZE(appSettings.shadingModeNames));
-			if (appSettings.shadingModeIndex > 3) {
-				ImGui::DragFloat3("Light Rotation", &appSettings.lightRotation.x, 1.0f);
+			if (ImGui::CollapsingHeader("Rendering Settings"))
+			{
+				ImGui::ColorEdit3("BG color", &appSettings.bgColor.x);
+				ImGui::ColorEdit3("Shape color", &appSettings.shapeColor.x);
+				ImGui::Combo("Shading mode", &appSettings.shadingModeIndex, appSettings.shadingModeNames, IM_ARRAYSIZE(appSettings.shadingModeNames));
+				if (appSettings.shadingModeIndex > 3) {
+					ImGui::DragFloat3("Light Rotation", &appSettings.lightRotation.x, 1.0f);
+				}
+				ImGui::Checkbox("Draw as points", &appSettings.drawAsPoints);
+				if (ImGui::Checkbox("Wireframe", &appSettings.wireframe)) {
+					glPolygonMode(GL_FRONT_AND_BACK, appSettings.wireframe ? GL_LINE : GL_FILL);
+				}
+				if (ImGui::Checkbox("Back-face culling", &appSettings.backFaceCulling)) {
+					if (appSettings.backFaceCulling)
+						glEnable(GL_CULL_FACE);
+					else
+						glDisable(GL_CULL_FACE);
+				}
 			}
-			ImGui::Checkbox("Draw as points", &appSettings.drawAsPoints);
-			if (ImGui::Checkbox("Wireframe", &appSettings.wireframe)) {
-				glPolygonMode(GL_FRONT_AND_BACK, appSettings.wireframe ? GL_LINE : GL_FILL);
+			if (ImGui::CollapsingHeader("Edit Cube"))
+			{
+				ImGui::PushID(0);
+				ImGui::DragFloat3("Position", &testCube.transform.position.x, 0.1f);
+				ImGui::DragFloat("Scale", &testCube.size, 0.05);
+				ImGui::PopID();
 			}
-			if (ImGui::Checkbox("Back-face culling", &appSettings.backFaceCulling)) {
-				if (appSettings.backFaceCulling)
-					glEnable(GL_CULL_FACE);
-				else
-					glDisable(GL_CULL_FACE);
+			if (ImGui::CollapsingHeader("Edit Plane"))
+			{
+				ImGui::PushID(1);
+				ImGui::DragFloat3("Position", &testPlane.transform.position.x, 0.1f);
+				ImGui::DragFloat("Scale", &testPlane.size, 0.05);
+				ImGui::DragInt("Subdivisions", &testPlane.subdivisions, 1, 3, 128);
+				ImGui::PopID();
+			}
+			if (ImGui::CollapsingHeader("Edit Cylinder"))
+			{
+				ImGui::PushID(2);
+				ImGui::DragFloat3("Position", &testCyl.transform.position.x, 0.1f);
+				ImGui::DragFloat("Height", &testCyl.height, 0.05);
+				ImGui::DragFloat("Radius", &testCyl.radius, 0.05);
+				ImGui::DragInt("Subdivisions", &testCyl.subdivisions, 1, 3, 128);
+				ImGui::PopID();
+			}
+			if (ImGui::CollapsingHeader("Edit Sphere"))
+			{
+				ImGui::PushID(3);
+				ImGui::DragFloat3("Position", &testSphere.transform.position.x, 0.1f);
+				ImGui::DragFloat("Scale", &testSphere.radius, 0.05);
+				ImGui::DragInt("Subdivisions", &testSphere.subdivisions, 1, 3, 128);
+				ImGui::PopID();
+			}
+			if (ImGui::CollapsingHeader("Edit Torus"))
+			{
+				ImGui::PushID(4);
+				ImGui::DragFloat3("Position", &testTorus.transform.position.x, 0.1f);
+				ImGui::DragFloat("Radius", &testTorus.radius, 0.05);
+				ImGui::DragFloat("Thickness", &testTorus.thickness, 0.05);
+				ImGui::DragInt("Subdivisions", &testTorus.subdivisions, 1, 3, 128);
+				ImGui::PopID();
 			}
 			ImGui::End();
 			
