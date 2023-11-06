@@ -220,10 +220,10 @@ namespace willowLib {
 			}
 		}
 		//point, 1 ahead, 1 ahead next row
-		for (int ring = 0; ring <= subdivisions; ring++)
+		for (int ring = 0; ring < subdivisions; ring++)
 		{
-			int start = ring * subdivisions;
-			for (int ringPlace = 0; ringPlace <= subdivisions; ringPlace++)
+			int start = ring * (subdivisions + 1);
+			for (int ringPlace = 0; ringPlace < subdivisions; ringPlace++)
 			{
 				mesh.indices.push_back(start + ringPlace);
 				mesh.indices.push_back(start + ringPlace + 1);
@@ -234,7 +234,6 @@ namespace willowLib {
 				mesh.indices.push_back(start + ringPlace + subdivisions + 1);
 			}
 		}
-		mesh.indices.pop_back();
 		return mesh;
 	}
 }
