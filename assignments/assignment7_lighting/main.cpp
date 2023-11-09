@@ -27,6 +27,22 @@ ew::Vec3 bgColor = ew::Vec3(0.1f);
 ew::Camera camera;
 ew::CameraController cameraController;
 
+struct Light {
+	ew::Vec3 position = { 0, 1, 0 };
+	ew::Vec3 color = { 1, 1, 1 };
+};
+
+Light light;
+
+struct Material {
+	float ambientK;
+	float diffuseK = 1.0f;
+	float specular;
+	float shininess;
+};
+
+Material mat;
+
 int main() {
 	printf("Initializing...");
 	if (!glfwInit()) {
@@ -61,17 +77,24 @@ int main() {
 	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
 	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
 
+	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
+
 	//Create cube
 	ew::Mesh cubeMesh(ew::createCube(1.0f));
 	ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
 	ew::Mesh sphereMesh(ew::createSphere(0.5f, 64));
 	ew::Mesh cylinderMesh(ew::createCylinder(0.5f, 1.0f, 32));
 
+	ew::Mesh lightOrbMesh(ew::createSphere(0.1f, 16));
+
 	//Initialize transforms
 	ew::Transform cubeTransform;
 	ew::Transform planeTransform;
 	ew::Transform sphereTransform;
 	ew::Transform cylinderTransform;
+
+	ew::Transform lightOrbTransform;
+	
 	planeTransform.position = ew::Vec3(0, -1.0, 0);
 	sphereTransform.position = ew::Vec3(-1.5f, 0.0f, 0.0f);
 	cylinderTransform.position = ew::Vec3(1.5f, 0.0f, 0.0f);
@@ -92,11 +115,16 @@ int main() {
 		//RENDER
 		glClearColor(bgColor.x, bgColor.y,bgColor.z,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+				
 		shader.use();
 		glBindTexture(GL_TEXTURE_2D, brickTexture);
 		shader.setInt("_Texture", 0);
 		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		shader.setVec3("_Light.position", light.position);
+		shader.setVec3("_Light.color", light.color);
+
+		shader.setFloat("_diffuseK", mat.diffuseK);
+
 
 		//Draw shapes
 		shader.setMat4("_Model", cubeTransform.getModelMatrix());
@@ -111,7 +139,18 @@ int main() {
 		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
 		cylinderMesh.draw();
 
-		//TODO: Render point lights
+		//Render point lights
+		unlitShader.use();
+
+		light.position = { 2*sin(time), light.position.y, 2*cos(time) };
+
+		unlitShader.setVec3("_Color", light.color);
+		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		
+		lightOrbTransform.position = light.position;
+		unlitShader.setMat4("_Model", lightOrbTransform.getModelMatrix());
+		lightOrbMesh.draw();
+
 
 		//Render UI
 		{
@@ -138,8 +177,12 @@ int main() {
 					resetCamera(camera, cameraController);
 				}
 			}
-
 			ImGui::ColorEdit3("BG color", &bgColor.x);
+			ImGui::DragFloat3("Light position", &light.position.x, 0.1f);
+			ImGui::ColorEdit3("Light color", &light.color.x);
+
+			ImGui::DragFloat("Diffuse K", &mat.diffuseK, 0.01f, 0.0f, 1.0f);
+			
 			ImGui::End();
 			
 			ImGui::Render();
