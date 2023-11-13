@@ -36,12 +36,14 @@ Light light;
 
 struct Material {
 	float ambientK;
-	float diffuseK = 1.0f;
-	float specular;
-	float shininess;
+	float diffuseK = 0.25f;
+	float specular = 1.0f;
+	float shininess = 128;
 };
 
 Material mat;
+
+bool blinnPhong = true;
 
 int main() {
 	printf("Initializing...");
@@ -125,6 +127,11 @@ int main() {
 
 		shader.setFloat("_diffuseK", mat.diffuseK);
 
+		shader.setBool("_blinnPhong", blinnPhong);
+		shader.setFloat("_shininess", mat.shininess);
+		shader.setFloat("_specular", mat.specular);
+		shader.setVec3("_cameraPos", camera.position);
+
 
 		//Draw shapes
 		shader.setMat4("_Model", cubeTransform.getModelMatrix());
@@ -142,7 +149,8 @@ int main() {
 		//Render point lights
 		unlitShader.use();
 
-		light.position = { 2*sin(time), light.position.y, 2*cos(time) };
+		//Debug: make light rotate around the center
+		//light.position = { 2*sin(time), light.position.y, 2*cos(time) };
 
 		unlitShader.setVec3("_Color", light.color);
 		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
@@ -181,8 +189,11 @@ int main() {
 			ImGui::DragFloat3("Light position", &light.position.x, 0.1f);
 			ImGui::ColorEdit3("Light color", &light.color.x);
 
-			ImGui::DragFloat("Diffuse K", &mat.diffuseK, 0.01f, 0.0f, 1.0f);
-			
+			ImGui::SliderFloat("Diffuse K", &mat.diffuseK, 0.0f, 1.0f);
+			ImGui::SliderFloat("Shininess", &mat.shininess, 2.0f, 1024.0f);
+			ImGui::SliderFloat("Specular", &mat.specular, 0.0f, 1.0f);
+			ImGui::Checkbox("Using Blinn-Phong?", &blinnPhong);
+
 			ImGui::End();
 			
 			ImGui::Render();
