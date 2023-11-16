@@ -28,14 +28,17 @@ ew::Camera camera;
 ew::CameraController cameraController;
 
 struct Light {
-	ew::Vec3 position = { 0, 1, 0 };
 	ew::Vec3 color = { 1, 1, 1 };
+	ew::Transform transform;
 };
 
-Light light;
+const int MAX_LIGHTS = 4;
+int numLights = MAX_LIGHTS;
+
+Light lights[4];
 
 struct Material {
-	float ambientK;
+	float ambientK = 0.1f;
 	float diffuseK = 0.25f;
 	float specular = 1.0f;
 	float shininess = 128;
@@ -81,27 +84,34 @@ int main() {
 
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 
-	//Create cube
+	//Create meshes
 	ew::Mesh cubeMesh(ew::createCube(1.0f));
 	ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
 	ew::Mesh sphereMesh(ew::createSphere(0.5f, 64));
 	ew::Mesh cylinderMesh(ew::createCylinder(0.5f, 1.0f, 32));
-
-	ew::Mesh lightOrbMesh(ew::createSphere(0.1f, 16));
+	ew::Mesh lightSphere(ew::createSphere(0.1f, 16));
 
 	//Initialize transforms
 	ew::Transform cubeTransform;
 	ew::Transform planeTransform;
 	ew::Transform sphereTransform;
 	ew::Transform cylinderTransform;
-
-	ew::Transform lightOrbTransform;
 	
 	planeTransform.position = ew::Vec3(0, -1.0, 0);
 	sphereTransform.position = ew::Vec3(-1.5f, 0.0f, 0.0f);
 	cylinderTransform.position = ew::Vec3(1.5f, 0.0f, 0.0f);
 
 	resetCamera(camera,cameraController);
+
+	//Set light defaults
+	lights[0].transform.position = {  2, 1,  2 };
+	lights[0].color = { 1, 0, 0 };
+	lights[1].transform.position = {  2, 1, -2 };
+	lights[1].color = { 0, 1, 0 };
+	lights[2].transform.position = { -2, 1, -2 };
+	lights[2].color = { 0, 0, 1 };
+	lights[3].transform.position = { -2, 1,  2 };
+	lights[3].color = { 1, 1, 0 };
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -122,8 +132,19 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, brickTexture);
 		shader.setInt("_Texture", 0);
 		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-		shader.setVec3("_Light.position", light.position);
-		shader.setVec3("_Light.color", light.color);
+		
+		for (int i = 0; i < MAX_LIGHTS; i++)
+		{
+			if (i < numLights)
+			{
+				shader.setVec3(("_Lights[" + std::to_string(i) + "].position"), lights[i].transform.position);
+				shader.setVec3(("_Lights[" + std::to_string(i) + "].color"), lights[i].color);
+			}
+			else
+				shader.setVec3(("_Lights[" + std::to_string(i) + "].color"), ew::Vec3(0, 0, 0));
+		}
+
+		shader.setFloat("_ambientK", mat.ambientK);
 
 		shader.setFloat("_diffuseK", mat.diffuseK);
 
@@ -148,17 +169,15 @@ int main() {
 
 		//Render point lights
 		unlitShader.use();
-
-		//Debug: make light rotate around the center
-		//light.position = { 2*sin(time), light.position.y, 2*cos(time) };
-
-		unlitShader.setVec3("_Color", light.color);
-		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		
-		lightOrbTransform.position = light.position;
-		unlitShader.setMat4("_Model", lightOrbTransform.getModelMatrix());
-		lightOrbMesh.draw();
+		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 
+		for (int i = 0; i < numLights; i++)
+		{
+			unlitShader.setVec3("_Color", lights[i].color);
+			unlitShader.setMat4("_Model", lights[i].transform.getModelMatrix());
+			lightSphere.draw();
+		}
 
 		//Render UI
 		{
@@ -186,9 +205,19 @@ int main() {
 				}
 			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
-			ImGui::DragFloat3("Light position", &light.position.x, 0.1f);
-			ImGui::ColorEdit3("Light color", &light.color.x);
+			ImGui::SliderInt("Number of lights", &numLights, 0, MAX_LIGHTS);
+			for (int i = 0; i < numLights; i++)
+			{
+				ImGui::PushID(i);
+				if (ImGui::CollapsingHeader("Light"))
+				{
+					ImGui::DragFloat3("Position", &lights[i].transform.position.x, 0.1f);
+					ImGui::ColorEdit3("Color", &lights[i].color.x);
+				}
+				ImGui::PopID();
+			}
 
+			ImGui::SliderFloat("Ambient K", &mat.ambientK, 0.0f, 1.0f);
 			ImGui::SliderFloat("Diffuse K", &mat.diffuseK, 0.0f, 1.0f);
 			ImGui::SliderFloat("Shininess", &mat.shininess, 2.0f, 1024.0f);
 			ImGui::SliderFloat("Specular", &mat.specular, 0.0f, 1.0f);
