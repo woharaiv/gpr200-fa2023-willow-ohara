@@ -48,6 +48,17 @@ Material mat;
 
 bool blinnPhong = true;
 
+const int NUM_SHELLS = 16;
+
+struct HairProps {
+	float baseThreshold = 1.0f;
+	float thresholdDecay = 0.05f;
+	float shellSpacing = 0.01f;
+};
+
+HairProps grass;
+
+
 int main() {
 	printf("Initializing...");
 	if (!glfwInit()) {
@@ -79,40 +90,30 @@ int main() {
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
-	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
-
+	
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
+	
+	unsigned int randomGrassMap = ew::loadTexture("assets/green_random.jpg", GL_REPEAT, GL_NEAREST);
+	unsigned int perlinGrassMap = ew::loadTexture("assets/green_perlin.jpg", GL_REPEAT, GL_LINEAR);
+
+	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
 
 	//Create meshes
-	ew::Mesh cubeMesh(ew::createCube(1.0f));
-	ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
-	ew::Mesh sphereMesh(ew::createSphere(0.5f, 64));
-	ew::Mesh cylinderMesh(ew::createCylinder(0.5f, 1.0f, 32));
-	ew::Mesh lightSphere(ew::createSphere(0.1f, 16));
-
-	//Initialize transforms
-	ew::Transform cubeTransform;
-	ew::Transform planeTransform;
-	ew::Transform sphereTransform;
-	ew::Transform cylinderTransform;
+	ew::Mesh mossBallMesh(ew::createSphere(0.5f, 64));
+	ew::Mesh grassyPlaneMesh(ew::createPlane(5, 5, 8));
 	
-	planeTransform.position = ew::Vec3(0, -1.0, 0);
-	sphereTransform.position = ew::Vec3(-1.5f, 0.0f, 0.0f);
-	cylinderTransform.position = ew::Vec3(1.5f, 0.0f, 0.0f);
-
+	//Initialize transforms
+	ew::Transform mossBallTransform[NUM_SHELLS];
+	ew::Transform grassyPlaneTransform[NUM_SHELLS];
+	for (int i = 0; i < NUM_SHELLS; i++)
+	{
+		mossBallTransform[i].position = ew::Vec3(0, 0, 0);
+		grassyPlaneTransform[i].position = ew::Vec3(0, -1.5f, 0);
+	}
+	
 	resetCamera(camera,cameraController);
 
-	//Set light defaults
-	lights[0].transform.position = {  2, 1,  2 };
-	lights[0].color = { 1, 0, 0 };
-	lights[1].transform.position = {  2, 1, -2 };
-	lights[1].color = { 0, 1, 0 };
-	lights[2].transform.position = { -2, 1, -2 };
-	lights[2].color = { 0, 0, 1 };
-	lights[3].transform.position = { -2, 1,  2 };
-	lights[3].color = { 1, 1, 0 };
-
+	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
@@ -128,56 +129,42 @@ int main() {
 		glClearColor(bgColor.x, bgColor.y,bgColor.z,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				
-		shader.use();
-		glBindTexture(GL_TEXTURE_2D, brickTexture);
-		shader.setInt("_Texture", 0);
-		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		//Hair rendering
+		hairShader.use();
+		//Universal (for now) hair renderer values
+		hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		hairShader.setFloat("_ShellSpacing", grass.shellSpacing);
+		hairShader.setFloat("_BaseColorThreshold", grass.baseThreshold);
+		hairShader.setFloat("_ColorThresholdDecay", grass.thresholdDecay);
 		
-		for (int i = 0; i < MAX_LIGHTS; i++)
+		//MossyBall
+		//Set values used by all shells
+		glBindTexture(GL_TEXTURE_2D, perlinGrassMap);
+		hairShader.setInt("_HairMap", 0);
+		//Loop for each shell
+		for (int i = 0; i < NUM_SHELLS; i++)
 		{
-			if (i < numLights)
-			{
-				shader.setVec3(("_Lights[" + std::to_string(i) + "].position"), lights[i].transform.position);
-				shader.setVec3(("_Lights[" + std::to_string(i) + "].color"), lights[i].color);
-			}
-			else
-				shader.setVec3(("_Lights[" + std::to_string(i) + "].color"), ew::Vec3(0, 0, 0));
+			hairShader.setInt("_ShellNumber", i);
+			hairShader.setMat4("_Model", mossBallTransform[i].getModelMatrix());
+			mossBallMesh.draw();
+		}
+		//GrassyPlane
+		//Set values used by all shells
+		glBindTexture(GL_TEXTURE_2D, randomGrassMap);
+		hairShader.setInt("_HairMap", 0);
+		//Loop for each shell
+		for (int i = 0; i < NUM_SHELLS; i++)
+		{
+			hairShader.setInt("_ShellNumber", i);
+			hairShader.setMat4("_Model", grassyPlaneTransform[i].getModelMatrix());
+			grassyPlaneMesh.draw();
 		}
 
-		shader.setFloat("_ambientK", mat.ambientK);
-
-		shader.setFloat("_diffuseK", mat.diffuseK);
-
-		shader.setBool("_blinnPhong", blinnPhong);
-		shader.setFloat("_shininess", mat.shininess);
-		shader.setFloat("_specular", mat.specular);
-		shader.setVec3("_cameraPos", camera.position);
-
-
-		//Draw shapes
-		shader.setMat4("_Model", cubeTransform.getModelMatrix());
-		cubeMesh.draw();
-
-		shader.setMat4("_Model", planeTransform.getModelMatrix());
-		planeMesh.draw();
-
-		shader.setMat4("_Model", sphereTransform.getModelMatrix());
-		sphereMesh.draw();
-
-		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
-		cylinderMesh.draw();
-
-		//Render point lights
 		unlitShader.use();
-		
 		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-
-		for (int i = 0; i < numLights; i++)
-		{
-			unlitShader.setVec3("_Color", lights[i].color);
-			unlitShader.setMat4("_Model", lights[i].transform.getModelMatrix());
-			lightSphere.draw();
-		}
+		//
+		//render using unlit shader here
+		//
 
 		//Render UI
 		{
@@ -186,6 +173,12 @@ int main() {
 			ImGui::NewFrame();
 
 			ImGui::Begin("Settings");
+			if (ImGui::CollapsingHeader("Hair Rendering"))
+			{
+				ImGui::SliderFloat("Base Threshold", &grass.baseThreshold, 0, 1);
+				ImGui::SliderFloat("Threshold Decay", &grass.thresholdDecay, 0, 1);
+				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
+			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::DragFloat3("Position", &camera.position.x, 0.1f);
 				ImGui::DragFloat3("Target", &camera.target.x, 0.1f);
