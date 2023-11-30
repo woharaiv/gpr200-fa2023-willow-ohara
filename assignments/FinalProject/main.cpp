@@ -93,8 +93,9 @@ int main() {
 	
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 	
-	unsigned int randomGrassMap = ew::loadTexture("assets/green_random.jpg", GL_REPEAT, GL_NEAREST);
-	unsigned int perlinGrassMap = ew::loadTexture("assets/green_perlin.jpg", GL_REPEAT, GL_LINEAR);
+	unsigned int randomMap = ew::loadTexture("assets/random.jpg", GL_REPEAT, GL_NEAREST);
+	unsigned int perlinMap = ew::loadTexture("assets/perlin.jpg", GL_REPEAT, GL_LINEAR);
+	unsigned int green = ew::loadTexture("assets/green.jpg", GL_REPEAT, GL_LINEAR);
 
 	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
 
@@ -136,11 +137,15 @@ int main() {
 		hairShader.setFloat("_ShellSpacing", grass.shellSpacing);
 		hairShader.setFloat("_BaseColorThreshold", grass.baseThreshold);
 		hairShader.setFloat("_ColorThresholdDecay", grass.thresholdDecay);
-		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, green);
+		hairShader.setInt("_Texture", 0);
+		glActiveTexture(GL_TEXTURE1);
+
 		//MossyBall
 		//Set values used by all shells
-		glBindTexture(GL_TEXTURE_2D, perlinGrassMap);
-		hairShader.setInt("_HairMap", 0);
+		glBindTexture(GL_TEXTURE_2D, perlinMap);
+		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
 		for (int i = 0; i < NUM_SHELLS; i++)
 		{
@@ -150,8 +155,8 @@ int main() {
 		}
 		//GrassyPlane
 		//Set values used by all shells
-		glBindTexture(GL_TEXTURE_2D, randomGrassMap);
-		hairShader.setInt("_HairMap", 0);
+		glBindTexture(GL_TEXTURE_2D, randomMap);
+		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
 		for (int i = 0; i < NUM_SHELLS; i++)
 		{
@@ -160,11 +165,15 @@ int main() {
 			grassyPlaneMesh.draw();
 		}
 
+
+
 		unlitShader.use();
 		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		//
 		//render using unlit shader here
 		//
+
+
 
 		//Render UI
 		{
