@@ -12,12 +12,16 @@ uniform sampler2D _Texture;
 
 uniform int _ShellNumber;
 
-uniform float _BaseColorThreshold;
 uniform float _ColorThresholdDecay;
 
+uniform float _Attenuation;
+
 void main(){
-	//TODO: Add separate color property so hieght and brightness aren't tied (Maybe 2 textures?)
-	FragColor = texture(_Texture,fs_in.UV);
 	float height = length(texture(_HairMap,fs_in.UV));
-	if (height < (_BaseColorThreshold + _ColorThresholdDecay * _ShellNumber)) discard;
+	if (height < (1 + _ColorThresholdDecay * _ShellNumber)) discard;
+	else //Don't bother doing any of this if we're not rendering the fragment
+	{
+		FragColor = texture(_Texture,fs_in.UV);
+		FragColor = clamp((FragColor * pow(_ShellNumber + 1, _Attenuation)), vec4(0, 0, 0, 0), 1.5*FragColor);
+	}
 }

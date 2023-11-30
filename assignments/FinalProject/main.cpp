@@ -48,12 +48,14 @@ Material mat;
 
 bool blinnPhong = true;
 
-const int NUM_SHELLS = 16;
+const int MAX_SHELLS = 256;
+int numShells = 16;
 
 struct HairProps {
-	float baseThreshold = 1.0f;
 	float thresholdDecay = 0.05f;
 	float shellSpacing = 0.01f;
+	float hairHeight = 0.2f;
+	float attenuation = 1.4f;
 };
 
 HairProps grass;
@@ -94,7 +96,7 @@ int main() {
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 	
 	unsigned int randomMap = ew::loadTexture("assets/random.jpg", GL_REPEAT, GL_NEAREST);
-	unsigned int perlinMap = ew::loadTexture("assets/perlin.jpg", GL_REPEAT, GL_LINEAR);
+	unsigned int perlinMap = ew::loadTexture("assets/perlin.jpg", GL_REPEAT, GL_NEAREST);
 	unsigned int green = ew::loadTexture("assets/green.jpg", GL_REPEAT, GL_LINEAR);
 
 	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
@@ -104,9 +106,9 @@ int main() {
 	ew::Mesh grassyPlaneMesh(ew::createPlane(5, 5, 8));
 	
 	//Initialize transforms
-	ew::Transform mossBallTransform[NUM_SHELLS];
-	ew::Transform grassyPlaneTransform[NUM_SHELLS];
-	for (int i = 0; i < NUM_SHELLS; i++)
+	ew::Transform mossBallTransform[MAX_SHELLS];
+	ew::Transform grassyPlaneTransform[MAX_SHELLS];
+	for (int i = 0; i < MAX_SHELLS; i++)
 	{
 		mossBallTransform[i].position = ew::Vec3(0, 0, 0);
 		grassyPlaneTransform[i].position = ew::Vec3(0, -1.5f, 0);
@@ -134,9 +136,9 @@ int main() {
 		hairShader.use();
 		//Universal (for now) hair renderer values
 		hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-		hairShader.setFloat("_ShellSpacing", grass.shellSpacing);
-		hairShader.setFloat("_BaseColorThreshold", grass.baseThreshold);
-		hairShader.setFloat("_ColorThresholdDecay", grass.thresholdDecay);
+		hairShader.setFloat("_ShellSpacing", grass.hairHeight/numShells);
+		hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+		hairShader.setFloat("_Attenuation", log(grass.attenuation)/log(numShells));
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, green);
 		hairShader.setInt("_Texture", 0);
@@ -147,7 +149,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, perlinMap);
 		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
-		for (int i = 0; i < NUM_SHELLS; i++)
+		for (int i = 0; i < numShells; i++)
 		{
 			hairShader.setInt("_ShellNumber", i);
 			hairShader.setMat4("_Model", mossBallTransform[i].getModelMatrix());
@@ -158,7 +160,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, randomMap);
 		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
-		for (int i = 0; i < NUM_SHELLS; i++)
+		for (int i = 0; i < numShells; i++)
 		{
 			hairShader.setInt("_ShellNumber", i);
 			hairShader.setMat4("_Model", grassyPlaneTransform[i].getModelMatrix());
@@ -184,9 +186,11 @@ int main() {
 			ImGui::Begin("Settings");
 			if (ImGui::CollapsingHeader("Hair Rendering"))
 			{
-				ImGui::SliderFloat("Base Threshold", &grass.baseThreshold, 0, 1);
+				ImGui::SliderInt("Shells", &numShells, 1, MAX_SHELLS);
 				ImGui::SliderFloat("Threshold Decay", &grass.thresholdDecay, 0, 1);
 				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
+				ImGui::SliderFloat("Grass Height", &grass.hairHeight, 0, 2);
+				ImGui::SliderFloat("Attenuation", &grass.attenuation, -1, 2);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::DragFloat3("Position", &camera.position.x, 0.1f);
@@ -207,24 +211,6 @@ int main() {
 				}
 			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
-			ImGui::SliderInt("Number of lights", &numLights, 0, MAX_LIGHTS);
-			for (int i = 0; i < numLights; i++)
-			{
-				ImGui::PushID(i);
-				if (ImGui::CollapsingHeader("Light"))
-				{
-					ImGui::DragFloat3("Position", &lights[i].transform.position.x, 0.1f);
-					ImGui::ColorEdit3("Color", &lights[i].color.x);
-				}
-				ImGui::PopID();
-			}
-
-			ImGui::SliderFloat("Ambient K", &mat.ambientK, 0.0f, 1.0f);
-			ImGui::SliderFloat("Diffuse K", &mat.diffuseK, 0.0f, 1.0f);
-			ImGui::SliderFloat("Shininess", &mat.shininess, 2.0f, 1024.0f);
-			ImGui::SliderFloat("Specular", &mat.specular, 0.0f, 1.0f);
-			ImGui::Checkbox("Using Blinn-Phong?", &blinnPhong);
-
 			ImGui::End();
 			
 			ImGui::Render();
