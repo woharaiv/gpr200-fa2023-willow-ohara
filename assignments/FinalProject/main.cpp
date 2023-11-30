@@ -98,6 +98,9 @@ int main() {
 	unsigned int randomMap = ew::loadTexture("assets/random.jpg", GL_REPEAT, GL_NEAREST);
 	unsigned int perlinMap = ew::loadTexture("assets/perlin.jpg", GL_REPEAT, GL_NEAREST);
 	unsigned int green = ew::loadTexture("assets/green.jpg", GL_REPEAT, GL_LINEAR);
+	unsigned int colorGrid = ew::loadTexture("assets/color_grid.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
+	unsigned int smile = ew::loadTexture("assets/smiley.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
+	unsigned int smileMap = ew::loadTexture("assets/smiley_hair.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
 
 	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
 
@@ -142,11 +145,13 @@ int main() {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, green);
 		hairShader.setInt("_Texture", 0);
-		glActiveTexture(GL_TEXTURE1);
-
+		
 		//MossyBall
 		//Set values used by all shells
-		glBindTexture(GL_TEXTURE_2D, perlinMap);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, smile);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, smileMap);
 		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
 		for (int i = 0; i < numShells; i++)
@@ -157,6 +162,9 @@ int main() {
 		}
 		//GrassyPlane
 		//Set values used by all shells
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, green);
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, randomMap);
 		hairShader.setInt("_HairMap", 1);
 		//Loop for each shell
