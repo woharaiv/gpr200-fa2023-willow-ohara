@@ -18,7 +18,7 @@ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/)
 
 install(FILES ${FINALPROJECT_INC} DESTINATION include/FinalProject)
 add_executable(FinalProject ${FINALPROJECT_SRC} ${FINALPROJECT_INC} ${ASSIGNMENT7_ASSETS})
-target_link_libraries(FinalProject PUBLIC core IMGUI)
+target_link_libraries(FinalProject PUBLIC core IMGUI assimp)
 target_include_directories(FinalProject PUBLIC ${CORE_INC_DIR} ${stb_INCLUDE_DIR})
 
 #Trigger asset copy when assignment7_lighting is built
