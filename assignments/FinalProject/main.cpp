@@ -55,6 +55,7 @@ int numShells = 16;
 
 struct HairProps {
 	float thresholdDecay = 0.05f;
+	float strandSlope = 0.1f;
 	float shellSpacing = 0.01f;
 	float hairHeight = 0.2f;
 	float attenuation = 1.4f;
@@ -142,7 +143,9 @@ int main() {
 		//Universal (for now) hair renderer values
 		hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		hairShader.setFloat("_ShellSpacing", grass.hairHeight/numShells);
+		hairShader.setInt("_ShellsRendering", numShells);
 		hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+		hairShader.setFloat("_HairCutoffSlope", grass.strandSlope);
 		hairShader.setFloat("_Attenuation", log(grass.attenuation)/log(numShells));
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, green);
@@ -197,7 +200,7 @@ int main() {
 			if (ImGui::CollapsingHeader("Hair Rendering"))
 			{
 				ImGui::SliderInt("Shells", &numShells, 1, MAX_SHELLS);
-				ImGui::SliderFloat("Threshold Decay", &grass.thresholdDecay, 0, 1);
+				ImGui::SliderFloat("Strand Slope", &grass.strandSlope, 0, 1);
 				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
 				ImGui::SliderFloat("Grass Height", &grass.hairHeight, 0, 2);
 				ImGui::SliderFloat("Attenuation", &grass.attenuation, -1, 2);
