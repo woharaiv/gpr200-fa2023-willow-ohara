@@ -28,13 +28,63 @@ namespace celLib
 	void Model::processNode(aiNode* node, const aiScene* scene) 
 	{
 		//TODO: process all the node's meshes (if any)
+		for (unsigned int i = 0; i < node->mNumMeshes; i++) 
+		{
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			meshes.push_back(processMesh(mesh, scene));
+		}
 		//TODO: then do the same for each of its children
+		for (unsigned int i = 0; i < node->mNumChildren; i++) 
+		{
+			processNode(node->mChildren[i], scene);
+		}
 	}
 
 	ew::Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) 
 	{
-		ew::Mesh convertedMesh = {};
+		ew::MeshData meshData;
 
+		for (unsigned int i = 0; i < mesh->mNumVertices; i++) 
+		{
+			ew::Vertex vertex;
+			//process vertex positions, normals and texture coordinates
+			ew::Vec3 vector;
+			//pos
+			vector.x = mesh->mVertices[i].x;
+			vector.y = mesh->mVertices[i].y;
+			vector.z = mesh->mVertices[i].z;
+			vertex.pos = vector;
+			//normals
+			vector.x = mesh->mNormals[i].x;
+			vector.y = mesh->mNormals[i].y;
+			vector.z = mesh->mNormals[i].z;
+			vertex.normal = vector;
+			//UVs / texture coordinates
+			if (mesh->mTextureCoords[0])
+			{
+				ew::Vec2 uv;
+				uv.x = mesh->mTextureCoords[0][i].x;
+				uv.y = mesh->mTextureCoords[0][i].y;
+				vertex.uv = uv;
+			}
+			else 
+			{
+				vertex.uv = ew::Vec2(0.0f,0.0f);
+			}
+
+			meshData.vertices.push_back(vertex);
+		}
+		//process indices
+		for (unsigned int i = 0; i < mesh->mNumFaces; i++) 
+		{
+			aiFace face = mesh->mFaces[i];
+			for (unsigned int j = 0; j < face.mNumIndices; j++) 
+			{
+				meshData.indices.push_back(face.mIndices[j]);
+			}
+		}
+		ew::Mesh convertedMesh = {};
+		convertedMesh.load(meshData);
 		return convertedMesh;
 	}
 }
