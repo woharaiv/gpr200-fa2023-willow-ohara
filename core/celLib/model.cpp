@@ -11,7 +11,7 @@ namespace celLib
 		}
 	}
 
-	void Model::loadModel(std::string filepath) 
+	void Model::loadModel(const std::string& filepath) 
 	{
 		//import model from filepath
 		Assimp::Importer import;
@@ -55,10 +55,13 @@ namespace celLib
 			vector.z = mesh->mVertices[i].z;
 			vertex.pos = vector;
 			//normals
-			vector.x = mesh->mNormals[i].x;
-			vector.y = mesh->mNormals[i].y;
-			vector.z = mesh->mNormals[i].z;
-			vertex.normal = vector;
+			if (mesh->HasNormals()) 
+			{
+				vector.x = mesh->mNormals[i].x;
+				vector.y = mesh->mNormals[i].y;
+				vector.z = mesh->mNormals[i].z;
+				vertex.normal = vector;
+			}
 			//UVs / texture coordinates
 			if (mesh->mTextureCoords[0])
 			{

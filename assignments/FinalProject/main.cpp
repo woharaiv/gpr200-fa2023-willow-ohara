@@ -16,6 +16,7 @@
 #include <ew/cameraController.h>
 
 #include <assimp/Importer.hpp>
+#include "celLib/model.h"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void resetCamera(ew::Camera& camera, ew::CameraController& cameraController);
@@ -62,6 +63,7 @@ struct HairProps {
 };
 
 HairProps grass;
+const std::string& filepath = "assets/models/Shadow/Shadow.obj";
 
 
 int main() {
@@ -96,6 +98,7 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	
+
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 	
 	unsigned int randomMap = ew::loadTexture("assets/random.jpg", GL_REPEAT, GL_NEAREST);
@@ -122,6 +125,7 @@ int main() {
 	
 	resetCamera(camera,cameraController);
 
+	celLib::Model model(filepath);
 	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -187,6 +191,7 @@ int main() {
 		//
 		//render using unlit shader here
 		//
+		//unlitShader.setMat4("_Model", );
 
 
 

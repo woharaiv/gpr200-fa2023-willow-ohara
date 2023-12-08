@@ -15,12 +15,12 @@ namespace celLib
 	class Model 
 	{
 		public:
-			Model(char* path) { loadModel(path); };
+			Model(const std::string& path) { loadModel(path); };
 			void Draw(); // call draw on each mesh
 		private:
 			std::vector<ew::Mesh> meshes;
 			std::string directory;
-			void loadModel(std::string path);
+			void loadModel(const std::string& path);
 			void processNode(aiNode *node, const aiScene *scene);
 			ew::Mesh processMesh(aiMesh * mesh, const aiScene * scene);
 			
