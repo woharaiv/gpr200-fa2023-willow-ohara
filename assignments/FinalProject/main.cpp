@@ -208,7 +208,7 @@ int main() {
 				ImGui::SliderFloat("Strand Slope", &grass.strandSlope, 0, 1);
 				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
 				ImGui::SliderFloat("Grass Height", &grass.hairHeight, 0, 2);
-				ImGui::SliderFloat("Attenuation", &grass.attenuation, -1, 2);
+				ImGui::DragFloat("Attenuation", &grass.attenuation, 0.01, 0);
 			}
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::DragFloat3("Position", &camera.position.x, 0.1f);
