@@ -63,6 +63,7 @@ struct HairProps {
 };
 
 HairProps grass;
+
 const std::string& filepath = "assets/models/Shadow/Shadow.obj";
 
 
@@ -125,7 +126,7 @@ int main() {
 	
 	resetCamera(camera,cameraController);
 
-	celLib::Model model(filepath);
+	celLib::Model testModel(filepath);
 	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -192,6 +193,11 @@ int main() {
 		//render using unlit shader here
 		//
 		//unlitShader.setMat4("_Model", );
+		ew::Mat4 tModel = ew::Mat4(1.0f);
+		tModel = ew::Translate(ew::Vec3(0.0f));
+		tModel = ew::Scale(ew::Vec3(0.05f,0.05f,0.05f));
+		unlitShader.setMat4("_Model", tModel);
+		testModel.Draw();
 
 
 
