@@ -66,6 +66,14 @@ HairProps grass;
 
 const std::string& filepath = "assets/models/Shadow/Shadow.obj";
 
+struct ModelSettings 
+{
+	ew::Vec3 position = ew::Vec3(2.0f, -1.0f, -0.5f);
+	ew::Vec3 rotation = ew::Vec3(1.5f, 0.0f, 0.0f);
+	ew::Vec3 scale = ew::Vec3(0.03f, 0.03f, 0.03f);
+};
+
+ModelSettings m_settings;
 
 int main() {
 	printf("Initializing...");
@@ -127,6 +135,7 @@ int main() {
 	resetCamera(camera,cameraController);
 
 	celLib::Model testModel(filepath);
+	//unsigned int modelTexture = ew::loadTexture("assets/models/Shadow/texture000.png", GL_REPEAT, GL_LINEAR);
 	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -193,9 +202,12 @@ int main() {
 		//render using unlit shader here
 		//
 		//unlitShader.setMat4("_Model", );
-		ew::Mat4 tModel = ew::Mat4(1.0f);
-		tModel = ew::Translate(ew::Vec3(0.0f));
-		tModel = ew::Scale(ew::Vec3(0.05f,0.05f,0.05f));
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D,modelTexture);
+		ew::Mat4 tModel_T = ew::Translate(m_settings.position);
+		ew::Mat4 tModel_R = ew::RotateX(m_settings.rotation.x) * ew::RotateY(m_settings.rotation.y) * ew::RotateZ(m_settings.rotation.z);
+		ew::Mat4 tModel_S = ew::Scale(m_settings.scale);
+		ew::Mat4 tModel = tModel_T * tModel_R * tModel_S;
 		unlitShader.setMat4("_Model", tModel);
 		testModel.Draw();
 
@@ -233,6 +245,12 @@ int main() {
 				if (ImGui::Button("Reset")) {
 					resetCamera(camera, cameraController);
 				}
+			}
+			if (ImGui::CollapsingHeader("Model"))
+			{
+				ImGui::DragFloat3("Position", &m_settings.position.x, 0.05f );
+				ImGui::DragFloat3("Rotation", &m_settings.rotation.x, 0.05f );
+				ImGui::DragFloat3("Scale", &m_settings.scale.x, 0.01f);
 			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
 			ImGui::End();
