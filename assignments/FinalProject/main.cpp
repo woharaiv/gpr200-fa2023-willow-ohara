@@ -64,13 +64,15 @@ struct HairProps {
 
 HairProps grass;
 
-const std::string& filepath = "assets/models/Shadow/Shadow.obj";
+const std::string& filepath_shadow = "assets/models/Shadow/Shadow.obj";
+const std::string& filepath_backpack = "assets/models/backpack/backpack.obj";
 
 struct ModelSettings 
 {
 	ew::Vec3 position = ew::Vec3(2.0f, -1.0f, -0.5f);
-	ew::Vec3 rotation = ew::Vec3(1.5f, 0.0f, 0.0f);
-	ew::Vec3 scale = ew::Vec3(0.03f, 0.03f, 0.03f);
+	ew::Vec3 rotation = ew::Vec3(0.0f);
+	//ew::Vec3(0.03f, 0.03f, 0.03f);
+	ew::Vec3 scale = ew::Vec3(1.0f);
 };
 
 ModelSettings m_settings;
@@ -134,7 +136,7 @@ int main() {
 	
 	resetCamera(camera,cameraController);
 
-	celLib::Model testModel(filepath);
+	celLib::Model testModel(filepath_backpack);
 	//unsigned int modelTexture = ew::loadTexture("assets/models/Shadow/texture000.png", GL_REPEAT, GL_LINEAR);
 	
 	while (!glfwWindowShouldClose(window)) {
