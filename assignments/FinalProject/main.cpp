@@ -52,14 +52,14 @@ Material mat;
 bool blinnPhong = true;
 
 const int MAX_SHELLS = 256;
-int numShells = 16;
+int numShells = 64;
 
 struct HairProps {
 	float thresholdDecay = 0.05f;
-	float strandSlope = 0.1f;
+	float strandSlope = 0.45f;
 	float shellSpacing = 0.01f;
-	float hairHeight = 0.2f;
-	float attenuation = 1.4f;
+	float hairHeight = 0.5f;
+	float attenuation = 2.0f;
 };
 
 HairProps grass;
@@ -76,6 +76,10 @@ struct ModelSettings
 };
 
 ModelSettings m_settings;
+ModelSettings hairyModelSettings;
+
+void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4, HairProps properties, ew::Mesh& mesh, unsigned int texture, unsigned int hairMap);
+void drawHairModel(ew::Shader& hairShader, ew::Camera& camera, ModelSettings modelSettings, HairProps properties, celLib::Model& model, unsigned int texture, unsigned int hairMap);
 
 int main() {
 	printf("Initializing...");
@@ -118,21 +122,21 @@ int main() {
 	unsigned int colorGrid = ew::loadTexture("assets/color_grid.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
 	unsigned int smile = ew::loadTexture("assets/smiley.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
 	unsigned int smileMap = ew::loadTexture("assets/smiley_hair.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
+	unsigned int backpackTexture = ew::loadTexture("assets/models/backpack/diffuse.jpg", GL_CLAMP_TO_BORDER, GL_NEAREST);
+	unsigned int backpackHair = ew::loadTexture("assets/models/backpack/specular.jpg", GL_CLAMP_TO_BORDER, GL_NEAREST);
 
 	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
 
 	//Create meshes
-	ew::Mesh mossBallMesh(ew::createSphere(0.5f, 64));
+	ew::Mesh smileyBallMesh(ew::createSphere(0.5f, 64));
 	ew::Mesh grassyPlaneMesh(ew::createPlane(5, 5, 8));
 	
 	//Initialize transforms
-	ew::Transform mossBallTransform[MAX_SHELLS];
-	ew::Transform grassyPlaneTransform[MAX_SHELLS];
-	for (int i = 0; i < MAX_SHELLS; i++)
-	{
-		mossBallTransform[i].position = ew::Vec3(0, 0, 0);
-		grassyPlaneTransform[i].position = ew::Vec3(0, -1.5f, 0);
-	}
+	ew::Transform smileyBallTransform;
+	ew::Transform grassyPlaneTransform;
+	smileyBallTransform.position = ew::Vec3(0, 0, 0);
+	grassyPlaneTransform.position = ew::Vec3(0, -1.5f, 0);
+	
 	
 	resetCamera(camera,cameraController);
 
@@ -155,49 +159,13 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				
 		//Hair rendering
-		hairShader.use();
-		//Universal (for now) hair renderer values
-		hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-		hairShader.setFloat("_ShellSpacing", grass.hairHeight/numShells);
-		hairShader.setInt("_ShellsRendering", numShells);
-		hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
-		hairShader.setFloat("_HairCutoffSlope", grass.strandSlope);
-		hairShader.setFloat("_Attenuation", log(grass.attenuation)/log(numShells));
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, green);
-		hairShader.setInt("_Texture", 0);
-		
-		//MossyBall
-		//Set values used by all shells
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, smile);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, smileMap);
-		hairShader.setInt("_HairMap", 1);
-		//Loop for each shell
-		for (int i = 0; i < numShells; i++)
-		{
-			hairShader.setInt("_ShellNumber", i);
-			hairShader.setMat4("_Model", mossBallTransform[i].getModelMatrix());
-			mossBallMesh.draw();
-		}
+		//Smiley face
+		drawHairMesh(hairShader, camera, smileyBallTransform.getModelMatrix(), grass, smileyBallMesh, smile, smileMap);
 		//GrassyPlane
-		//Set values used by all shells
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, green);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, randomMap);
-		hairShader.setInt("_HairMap", 1);
-		//Loop for each shell
-		for (int i = 0; i < numShells; i++)
-		{
-			hairShader.setInt("_ShellNumber", i);
-			hairShader.setMat4("_Model", grassyPlaneTransform[i].getModelMatrix());
-			grassyPlaneMesh.draw();
-		}
-
-
-
+		drawHairMesh(hairShader, camera, grassyPlaneTransform.getModelMatrix(), grass, grassyPlaneMesh, green, randomMap);
+		//HairyBackpack
+		drawHairModel(hairShader, camera, hairyModelSettings, grass, testModel, green, green);
+		
 		unlitShader.use();
 		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		//
@@ -206,12 +174,12 @@ int main() {
 		//unlitShader.setMat4("_Model", );
 		//glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D,modelTexture);
-		ew::Mat4 tModel_T = ew::Translate(m_settings.position);
+		/*ew::Mat4 tModel_T = ew::Translate(m_settings.position);
 		ew::Mat4 tModel_R = ew::RotateX(m_settings.rotation.x) * ew::RotateY(m_settings.rotation.y) * ew::RotateZ(m_settings.rotation.z);
 		ew::Mat4 tModel_S = ew::Scale(m_settings.scale);
 		ew::Mat4 tModel = tModel_T * tModel_R * tModel_S;
 		unlitShader.setMat4("_Model", tModel);
-		testModel.Draw();
+		testModel.Draw();*/
 
 
 
@@ -254,6 +222,12 @@ int main() {
 				ImGui::DragFloat3("Rotation", &m_settings.rotation.x, 0.05f );
 				ImGui::DragFloat3("Scale", &m_settings.scale.x, 0.01f);
 			}
+			if (ImGui::CollapsingHeader("Hairy Model"))
+			{
+				ImGui::DragFloat3("Position", &hairyModelSettings.position.x, 0.05f);
+				ImGui::DragFloat3("Rotation", &hairyModelSettings.rotation.x, 0.05f);
+				ImGui::DragFloat3("Scale", &hairyModelSettings.scale.x, 0.01f);
+			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
 			ImGui::End();
 			
@@ -284,6 +258,66 @@ void resetCamera(ew::Camera& camera, ew::CameraController& cameraController) {
 
 	cameraController.yaw = 0.0f;
 	cameraController.pitch = 0.0f;
+}
+
+void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4, HairProps properties, ew::Mesh& mesh, unsigned int texture, unsigned int hairMap)
+{
+	hairShader.use();
+	//Universal (for now) hair renderer values
+	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+	hairShader.setFloat("_ShellSpacing", properties.hairHeight / numShells);
+	hairShader.setInt("_ShellsRendering", numShells);
+	hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
+	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(numShells));
+	hairShader.setInt("_Texture", 0);
+	hairShader.setInt("_HairMap", 1);
+
+	//SmileyBall
+	//Set values used by all shells
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, hairMap);
+	//Loop for each shell
+	for (int i = 0; i < numShells; i++)
+	{
+		hairShader.setInt("_ShellNumber", i);
+		hairShader.setMat4("_Model", modelMat4);
+		mesh.draw();
+	}
+}
+
+void drawHairModel(ew::Shader& hairShader, ew::Camera& camera, ModelSettings modelSettings, HairProps properties, celLib::Model& model, unsigned int texture, unsigned int hairMap)
+{
+	hairShader.use();
+	//Universal (for now) hair renderer values
+	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+	hairShader.setFloat("_ShellSpacing", properties.hairHeight / numShells);
+	hairShader.setInt("_ShellsRendering", numShells);
+	hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
+	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(numShells));
+	hairShader.setInt("_Texture", 0);
+	hairShader.setInt("_HairMap", 1);
+
+	//SmileyBall
+	ew::Mat4 model_T = ew::Translate(modelSettings.position);
+	ew::Mat4 model_R = ew::RotateX(modelSettings.rotation.x) * ew::RotateY(modelSettings.rotation.y) * ew::RotateZ(modelSettings.rotation.z);
+	ew::Mat4 model_S = ew::Scale(modelSettings.scale);
+	ew::Mat4 model_mat4 = model_T * model_R * model_S;
+	//Set values used by all shells
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, hairMap);
+	//Loop for each shell
+	for (int i = 0; i < numShells; i++)
+	{
+		hairShader.setInt("_ShellNumber", i);
+		hairShader.setMat4("_Model", model_mat4);
+		model.Draw();
+	}
 }
 
 

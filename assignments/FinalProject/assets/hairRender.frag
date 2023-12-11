@@ -31,6 +31,6 @@ void main(){
 	else //Don't bother doing any of this if we're not rendering the fragment
 	{
 		FragColor = texture(_Texture,fs_in.UV);
-		FragColor = clamp(((FragColor) * pow((_ShellNumber + 1) * 0.8, _Attenuation) * (float(_ShellNumber)/float(_ShellsRendering))), FragColor*0.75, 1.5*FragColor);
+		FragColor = clamp(((FragColor) * pow(((float(_ShellNumber)/float(_ShellsRendering))) * 0.8, _Attenuation)), FragColor*0.75, 1.5*FragColor);
 	}
 }

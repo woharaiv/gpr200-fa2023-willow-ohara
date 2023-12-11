@@ -20,8 +20,7 @@ void main(){
 	vs_out.WorldNormal = transpose(inverse(mat3(_Model))) * vNormal;
 	
 	vs_out.WorldPosition = vec3(_Model * vec4(vPos, 1.0));
-	vs_out.WorldPosition += vNormal * _ShellSpacing * _ShellNumber;
+	vs_out.WorldPosition += vs_out.WorldNormal * _ShellSpacing * _ShellNumber;
 
-	gl_Position = _ViewProjection * ((_Model * vec4(vPos,1.0)) + vec4(vNormal * _ShellSpacing * _ShellNumber, 0));
-	//gl_Position += vec4(vNormal * _ShellSpacing * _ShellNumber, 0);
+	gl_Position = _ViewProjection * ((_Model * vec4(vPos,1.0)) + vec4(vs_out.WorldNormal * _ShellSpacing * _ShellNumber, 0));
 }
