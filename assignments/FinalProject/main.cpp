@@ -52,17 +52,19 @@ Material mat;
 bool blinnPhong = true;
 
 const int MAX_SHELLS = 256;
-int numShells = 64;
 
 struct HairProps {
 	float thresholdDecay = 0.05f;
 	float strandSlope = 0.45f;
 	float shellSpacing = 0.01f;
 	float hairHeight = 0.5f;
-	float attenuation = 2.0f;
+	float attenuation = 3.0f;
+	int numShells = 64;
 };
 
 HairProps grass;
+HairProps hair;
+HairProps pack;
 
 const std::string& filepath_shadow = "assets/models/Shadow/Shadow.obj";
 const std::string& filepath_backpack = "assets/models/backpack/backpack.obj";
@@ -112,7 +114,9 @@ int main() {
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	
+	//Setting structs
+	hair.strandSlope = 1;
+	hair.attenuation = 2;
 
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 	
@@ -122,9 +126,7 @@ int main() {
 	unsigned int colorGrid = ew::loadTexture("assets/color_grid.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
 	unsigned int smile = ew::loadTexture("assets/smiley.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
 	unsigned int smileMap = ew::loadTexture("assets/smiley_hair.jpg", GL_CLAMP_TO_EDGE, GL_NEAREST);
-	unsigned int backpackTexture = ew::loadTexture("assets/models/backpack/diffuse.jpg", GL_CLAMP_TO_BORDER, GL_NEAREST);
-	unsigned int backpackHair = ew::loadTexture("assets/models/backpack/specular.jpg", GL_CLAMP_TO_BORDER, GL_NEAREST);
-
+	
 	ew::Shader hairShader("assets/hairRender.vert", "assets/hairRender.frag");
 
 	//Create meshes
@@ -160,11 +162,11 @@ int main() {
 				
 		//Hair rendering
 		//Smiley face
-		drawHairMesh(hairShader, camera, smileyBallTransform.getModelMatrix(), grass, smileyBallMesh, smile, smileMap);
-		//GrassyPlane
+		drawHairMesh(hairShader, camera, smileyBallTransform.getModelMatrix(), hair, smileyBallMesh, smile, smileMap);
+		//Grassy Plane
 		drawHairMesh(hairShader, camera, grassyPlaneTransform.getModelMatrix(), grass, grassyPlaneMesh, green, randomMap);
-		//HairyBackpack
-		drawHairModel(hairShader, camera, hairyModelSettings, grass, testModel, green, green);
+		//Hairy Backpack
+		drawHairModel(hairShader, camera, hairyModelSettings, pack, testModel, green, randomMap);
 		
 		unlitShader.use();
 		unlitShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
@@ -190,14 +192,37 @@ int main() {
 			ImGui::NewFrame();
 
 			ImGui::Begin("Settings");
-			if (ImGui::CollapsingHeader("Hair Rendering"))
+			if (ImGui::CollapsingHeader("Grass"))
 			{
-				ImGui::SliderInt("Shells", &numShells, 1, MAX_SHELLS);
+				ImGui::PushID("Grass");
+				ImGui::SliderInt("Shells", &grass.numShells, 1, MAX_SHELLS);
 				ImGui::SliderFloat("Strand Slope", &grass.strandSlope, 0, 1);
 				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
 				ImGui::SliderFloat("Grass Height", &grass.hairHeight, 0, 2);
 				ImGui::DragFloat("Attenuation", &grass.attenuation, 0.01, 0);
+				ImGui::PopID();
 			}
+			if (ImGui::CollapsingHeader("Hair"))
+			{
+				ImGui::PushID("Hair");
+				ImGui::SliderInt("Shells", &hair.numShells, 1, MAX_SHELLS);
+				ImGui::SliderFloat("Strand Slope", &hair.strandSlope, 0, 1);
+				ImGui::SliderFloat("Shell Spacing", &hair.shellSpacing, 0, 0.1f);
+				ImGui::SliderFloat("Hair Height", &hair.hairHeight, 0, 2);
+				ImGui::DragFloat("Attenuation", &hair.attenuation, 0.01, 0);
+				ImGui::PopID();
+			}
+			if (ImGui::CollapsingHeader("Backpack"))
+			{
+				ImGui::PushID("Pack");
+				ImGui::SliderInt("Shells", &pack.numShells, 1, MAX_SHELLS);
+				ImGui::SliderFloat("Strand Slope", &pack.strandSlope, 0, 1);
+				ImGui::SliderFloat("Shell Spacing", &pack.shellSpacing, 0, 0.1f);
+				ImGui::SliderFloat("Hair Length", &pack.hairHeight, 0, 2);
+				ImGui::DragFloat("Attenuation", &pack.attenuation, 0.01, 0);
+				ImGui::PopID();
+			}
+
 			if (ImGui::CollapsingHeader("Camera")) {
 				ImGui::DragFloat3("Position", &camera.position.x, 0.1f);
 				ImGui::DragFloat3("Target", &camera.target.x, 0.1f);
@@ -216,17 +241,19 @@ int main() {
 					resetCamera(camera, cameraController);
 				}
 			}
-			if (ImGui::CollapsingHeader("Model"))
+			/*if (ImGui::CollapsingHeader("Model"))
 			{
 				ImGui::DragFloat3("Position", &m_settings.position.x, 0.05f );
 				ImGui::DragFloat3("Rotation", &m_settings.rotation.x, 0.05f );
 				ImGui::DragFloat3("Scale", &m_settings.scale.x, 0.01f);
-			}
+			}*/
 			if (ImGui::CollapsingHeader("Hairy Model"))
 			{
+				ImGui::PushID("Hairy");
 				ImGui::DragFloat3("Position", &hairyModelSettings.position.x, 0.05f);
 				ImGui::DragFloat3("Rotation", &hairyModelSettings.rotation.x, 0.05f);
 				ImGui::DragFloat3("Scale", &hairyModelSettings.scale.x, 0.01f);
+				ImGui::PopID();
 			}
 			ImGui::ColorEdit3("BG color", &bgColor.x);
 			ImGui::End();
@@ -265,13 +292,14 @@ void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4
 	hairShader.use();
 	//Universal (for now) hair renderer values
 	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-	hairShader.setFloat("_ShellSpacing", properties.hairHeight / numShells);
-	hairShader.setInt("_ShellsRendering", numShells);
-	hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+	hairShader.setFloat("_ShellSpacing", properties.hairHeight / properties.numShells);
+	hairShader.setInt("_ShellsRendering", properties.numShells);
+	hairShader.setFloat("_ColorThresholdDecay", pow(properties.numShells, -1));
 	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
-	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(numShells));
+	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(properties.numShells));
 	hairShader.setInt("_Texture", 0);
 	hairShader.setInt("_HairMap", 1);
+	hairShader.setVec3("_Scale", ew::Vec3(1.0));
 
 	//SmileyBall
 	//Set values used by all shells
@@ -280,7 +308,7 @@ void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, hairMap);
 	//Loop for each shell
-	for (int i = 0; i < numShells; i++)
+	for (int i = 0; i < properties.numShells; i++)
 	{
 		hairShader.setInt("_ShellNumber", i);
 		hairShader.setMat4("_Model", modelMat4);
@@ -293,13 +321,14 @@ void drawHairModel(ew::Shader& hairShader, ew::Camera& camera, ModelSettings mod
 	hairShader.use();
 	//Universal (for now) hair renderer values
 	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
-	hairShader.setFloat("_ShellSpacing", properties.hairHeight / numShells);
-	hairShader.setInt("_ShellsRendering", numShells);
-	hairShader.setFloat("_ColorThresholdDecay", pow(numShells, -1));
+	hairShader.setFloat("_ShellSpacing", properties.hairHeight / properties.numShells);
+	hairShader.setInt("_ShellsRendering", properties.numShells);
+	hairShader.setFloat("_ColorThresholdDecay", pow(properties.numShells, -1));
 	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
-	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(numShells));
+	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(properties.numShells));
 	hairShader.setInt("_Texture", 0);
 	hairShader.setInt("_HairMap", 1);
+	hairShader.setVec3("_Scale", modelSettings.scale);
 
 	//SmileyBall
 	ew::Mat4 model_T = ew::Translate(modelSettings.position);
@@ -312,7 +341,7 @@ void drawHairModel(ew::Shader& hairShader, ew::Camera& camera, ModelSettings mod
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, hairMap);
 	//Loop for each shell
-	for (int i = 0; i < numShells; i++)
+	for (int i = 0; i < properties.numShells; i++)
 	{
 		hairShader.setInt("_ShellNumber", i);
 		hairShader.setMat4("_Model", model_mat4);

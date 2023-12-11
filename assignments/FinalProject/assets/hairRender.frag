@@ -16,6 +16,7 @@ uniform int _ShellsRendering;
 uniform float _ColorThresholdDecay;
 uniform float _HairCutoffSlope;
 
+
 uniform float _Attenuation;
 
 void main(){
@@ -31,6 +32,6 @@ void main(){
 	else //Don't bother doing any of this if we're not rendering the fragment
 	{
 		FragColor = texture(_Texture,fs_in.UV);
-		FragColor = clamp(((FragColor) * pow(((float(_ShellNumber)/float(_ShellsRendering))) * 0.8, _Attenuation)), FragColor*0.75, 1.5*FragColor);
+		FragColor *= pow(float(_ShellNumber + 1)/float(_ShellsRendering), _Attenuation);
 	}
 }

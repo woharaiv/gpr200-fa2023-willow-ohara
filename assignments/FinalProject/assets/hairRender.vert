@@ -11,6 +11,7 @@ out Surface{
 
 uniform mat4 _Model;
 uniform mat4 _ViewProjection;
+uniform vec3 _Scale;
 
 uniform int _ShellNumber;
 uniform float _ShellSpacing;
@@ -20,7 +21,7 @@ void main(){
 	vs_out.WorldNormal = transpose(inverse(mat3(_Model))) * vNormal;
 	
 	vs_out.WorldPosition = vec3(_Model * vec4(vPos, 1.0));
-	vs_out.WorldPosition += vs_out.WorldNormal * _ShellSpacing * _ShellNumber;
+	vs_out.WorldPosition += vs_out.WorldNormal * _ShellSpacing * _ShellNumber * _Scale * _Scale;
 
-	gl_Position = _ViewProjection * ((_Model * vec4(vPos,1.0)) + vec4(vs_out.WorldNormal * _ShellSpacing * _ShellNumber, 0));
+	gl_Position = _ViewProjection * ((_Model * vec4(vPos,1.0)) + vec4(vs_out.WorldNormal * _ShellSpacing * _ShellNumber * _Scale * _Scale, 0));
 }
