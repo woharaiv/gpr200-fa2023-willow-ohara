@@ -26,12 +26,12 @@ void main(){
 	//How far is the current UV position from the center of the hair map texel is sits on?
 	float distFromTexelCenter = distance(vec2(0.5, 0.5), positionInTexel);
 	//Brighter texel means longer strand
-	float height = length(texture(_HairMap,fs_in.UV)) - 1;
+	float height = texture(_HairMap,fs_in.UV).r;
 	//Don't render the fragment if the strand is too tall or too wide
-	if (distFromTexelCenter > _HairCutoffSlope*(height - (float(_ShellNumber)/float(_ShellsRendering))) && _ShellNumber > 0) discard;
+	if (distFromTexelCenter > _HairCutoffSlope*(height - (float(_ShellNumber)/_ShellsRendering)) && _ShellNumber > 0) discard;
 	else //Don't bother doing any of this if we're not rendering the fragment
 	{
 		FragColor = texture(_Texture,fs_in.UV);
-		FragColor *= pow(float(_ShellNumber + 1)/float(_ShellsRendering), _Attenuation);
+		FragColor *= pow(float(_ShellNumber + 1)/_ShellsRendering, _Attenuation);
 	}
 }
