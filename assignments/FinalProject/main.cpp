@@ -115,8 +115,15 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	//Setting structs
+	grass.numShells = 256;
+	grass.strandSlope = 2.5f;
+	grass.hairHeight = 0.5f;
+
 	hair.strandSlope = 1;
-	hair.attenuation = 2;
+	hair.hairHeight = 0.2f;
+	hair.attenuation = 1;
+
+	pack.hairHeight = 0.25f;
 
 	ew::Shader unlitShader("assets/unlit.vert", "assets/unlit.frag");
 	
@@ -196,8 +203,7 @@ int main() {
 			{
 				ImGui::PushID("Grass");
 				ImGui::SliderInt("Shells", &grass.numShells, 1, MAX_SHELLS);
-				ImGui::SliderFloat("Strand Slope", &grass.strandSlope, 0, 1);
-				ImGui::SliderFloat("Shell Spacing", &grass.shellSpacing, 0, 0.1f);
+				ImGui::SliderFloat("Strand Slope", &grass.strandSlope, 0, 25);
 				ImGui::SliderFloat("Grass Height", &grass.hairHeight, 0, 2);
 				ImGui::DragFloat("Attenuation", &grass.attenuation, 0.01, 0);
 				ImGui::PopID();
@@ -206,9 +212,8 @@ int main() {
 			{
 				ImGui::PushID("Hair");
 				ImGui::SliderInt("Shells", &hair.numShells, 1, MAX_SHELLS);
-				ImGui::SliderFloat("Strand Slope", &hair.strandSlope, 0, 1);
-				ImGui::SliderFloat("Shell Spacing", &hair.shellSpacing, 0, 0.1f);
-				ImGui::SliderFloat("Hair Height", &hair.hairHeight, 0, 2);
+				ImGui::SliderFloat("Strand Slope", &hair.strandSlope, 0, 25);
+				ImGui::SliderFloat("Hair Length", &hair.hairHeight, 0, 2);
 				ImGui::DragFloat("Attenuation", &hair.attenuation, 0.01, 0);
 				ImGui::PopID();
 			}
@@ -216,9 +221,8 @@ int main() {
 			{
 				ImGui::PushID("Pack");
 				ImGui::SliderInt("Shells", &pack.numShells, 1, MAX_SHELLS);
-				ImGui::SliderFloat("Strand Slope", &pack.strandSlope, 0, 1);
-				ImGui::SliderFloat("Shell Spacing", &pack.shellSpacing, 0, 0.1f);
-				ImGui::SliderFloat("Hair Length", &pack.hairHeight, 0, 2);
+				ImGui::SliderFloat("Strand Slope", &pack.strandSlope, 0, 25);
+				ImGui::SliderFloat("Grass Height", &pack.hairHeight, 0, 2);
 				ImGui::DragFloat("Attenuation", &pack.attenuation, 0.01, 0);
 				ImGui::PopID();
 			}
@@ -290,28 +294,28 @@ void resetCamera(ew::Camera& camera, ew::CameraController& cameraController) {
 void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4, HairProps properties, ew::Mesh& mesh, unsigned int texture, unsigned int hairMap)
 {
 	hairShader.use();
-	//Universal (for now) hair renderer values
+	
 	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 	hairShader.setFloat("_ShellSpacing", properties.hairHeight / properties.numShells);
 	hairShader.setInt("_ShellsRendering", properties.numShells);
 	hairShader.setFloat("_ColorThresholdDecay", pow(properties.numShells, -1));
 	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
 	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(properties.numShells));
+	
 	hairShader.setInt("_Texture", 0);
 	hairShader.setInt("_HairMap", 1);
 	hairShader.setVec3("_Scale", ew::Vec3(1.0));
+	hairShader.setMat4("_Model", modelMat4);
 
-	//SmileyBall
-	//Set values used by all shells
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, hairMap);
+	
 	//Loop for each shell
 	for (int i = 0; i < properties.numShells; i++)
 	{
 		hairShader.setInt("_ShellNumber", i);
-		hairShader.setMat4("_Model", modelMat4);
 		mesh.draw();
 	}
 }
@@ -319,32 +323,33 @@ void drawHairMesh(ew::Shader& hairShader, ew::Camera& camera, ew::Mat4 modelMat4
 void drawHairModel(ew::Shader& hairShader, ew::Camera& camera, ModelSettings modelSettings, HairProps properties, celLib::Model& model, unsigned int texture, unsigned int hairMap)
 {
 	hairShader.use();
-	//Universal (for now) hair renderer values
+	
 	hairShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 	hairShader.setFloat("_ShellSpacing", properties.hairHeight / properties.numShells);
 	hairShader.setInt("_ShellsRendering", properties.numShells);
 	hairShader.setFloat("_ColorThresholdDecay", pow(properties.numShells, -1));
 	hairShader.setFloat("_HairCutoffSlope", properties.strandSlope);
 	hairShader.setFloat("_Attenuation", log(properties.attenuation) / log(properties.numShells));
+	
 	hairShader.setInt("_Texture", 0);
 	hairShader.setInt("_HairMap", 1);
 	hairShader.setVec3("_Scale", modelSettings.scale);
 
-	//SmileyBall
 	ew::Mat4 model_T = ew::Translate(modelSettings.position);
 	ew::Mat4 model_R = ew::RotateX(modelSettings.rotation.x) * ew::RotateY(modelSettings.rotation.y) * ew::RotateZ(modelSettings.rotation.z);
 	ew::Mat4 model_S = ew::Scale(modelSettings.scale);
 	ew::Mat4 model_mat4 = model_T * model_R * model_S;
-	//Set values used by all shells
+	hairShader.setMat4("_Model", model_mat4);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, hairMap);
+	
 	//Loop for each shell
 	for (int i = 0; i < properties.numShells; i++)
 	{
 		hairShader.setInt("_ShellNumber", i);
-		hairShader.setMat4("_Model", model_mat4);
 		model.Draw();
 	}
 }

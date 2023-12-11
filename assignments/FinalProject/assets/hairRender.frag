@@ -22,13 +22,13 @@ uniform float _Attenuation;
 void main(){
 	vec2 hairMapSize = textureSize(_HairMap, 0);
 	//how far is the current UV position from the bottom left of the hair map texel it sits on?
-	vec2 subTexelUV = vec2(mod(fs_in.UV.x * hairMapSize.x, 1), mod(fs_in.UV.y * hairMapSize.y, 1));
+	vec2 positionInTexel = fract(vec2(fs_in.UV * hairMapSize));
 	//How far is the current UV position from the center of the hair map texel is sits on?
-	float distFromMapTexelCenter = distance(vec2(0.5, 0.5), subTexelUV);
+	float distFromTexelCenter = distance(vec2(0.5, 0.5), positionInTexel);
 	//Brighter texel means longer strand
-	float height = length(texture(_HairMap,fs_in.UV));
+	float height = length(texture(_HairMap,fs_in.UV)) - 1;
 	//Don't render the fragment if the strand is too tall or too wide
-	if (height < (1 + _ColorThresholdDecay * _ShellNumber) || distFromMapTexelCenter > _HairCutoffSlope/(float(_ShellNumber)/float(_ShellsRendering))/height && _ShellNumber > 0) discard;
+	if (distFromTexelCenter > _HairCutoffSlope*(height - (float(_ShellNumber)/float(_ShellsRendering))) && _ShellNumber > 0) discard;
 	else //Don't bother doing any of this if we're not rendering the fragment
 	{
 		FragColor = texture(_Texture,fs_in.UV);
